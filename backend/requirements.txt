@@ -1,0 +1,25 @@
+# Vox Probabilis backend — locked per SPEC §4.
+# Python 3.12+ on Ubuntu 24.04 LTS (VPS confirmed 2026-04-18).
+# Installation:
+#     python3.12 -m venv venv && source venv/bin/activate
+#     pip install -r requirements.txt
+#
+# System deps (install once on the VPS, already present):
+#     apt install ffmpeg libsndfile1
+
+# --- API framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12           # required by FastAPI for multipart/form-data uploads
+
+# --- Audio pipeline
+praat-parselmouth==0.4.5           # jitter/shimmer/HNR via Praat bindings
+librosa==0.10.2.post1              # MFCC, spectral flux, voiced-frame detection
+numpy==1.26.4                      # pinned below 2.x until librosa/parselmouth certify
+scipy==1.13.1                      # Butterworth bandpass, Hilbert transform
+soundfile==0.12.1                  # WAV/FLAC I/O
+pydub==0.25.1                      # MP3/M4A/OGG via ffmpeg
+
+# --- Testing
+pytest==8.3.3
+httpx==0.27.2                      # async test client for FastAPI
