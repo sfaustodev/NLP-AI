@@ -93,8 +93,19 @@ def sniff_format(head: bytes) -> str:
 
 
 def _detect_voiced_ratio(samples: np.ndarray) -> float:
-    """Proportion of the signal that contains voiced activity (SPEC §7.1)."""
+    """Proportion of the signal that contains voiced activity (SPEC §7.1).
+
+    Guard against a librosa quirk: ``effects.split`` computes top_db
+    relative to the peak STFT power. On a pure-silence signal (all
+    zeros or uniform DC) the reference power collapses and every
+    frame lands at "the peak", so the whole array is reported as
+    voiced. We short-circuit to 0.0 when the RMS energy is below a
+    sane floor (~-70 dBFS) before letting librosa see the signal.
+    """
     if samples.size == 0:
+        return 0.0
+    rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
+    if rms < 1e-4:                # -80 dBFS; below any real mic floor
         return 0.0
     intervals = librosa.effects.split(samples, top_db=VOICE_SPLIT_TOP_DB)
     voiced = int(np.sum(intervals[:, 1] - intervals[:, 0])) if len(intervals) else 0
