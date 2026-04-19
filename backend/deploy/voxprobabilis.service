@@ -1,0 +1,45 @@
+[Unit]
+Description=Vox Probabilis backend (FastAPI + uvicorn)
+Documentation=https://doi.org/10.5281/zenodo.19478167
+After=network.target
+# Do NOT set After=nginx.service — nginx is optional (reverse proxy only).
+# The service must boot even if nginx is down.
+
+[Service]
+Type=simple
+User=vox
+Group=vox
+WorkingDirectory=/opt/voxprobabilis/backend
+
+# Virtualenv is created under /opt/voxprobabilis/venv during install.
+Environment="PATH=/opt/voxprobabilis/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+EnvironmentFile=/opt/voxprobabilis/.env
+
+# uvicorn binds to 127.0.0.1 only — nginx terminates TLS on :443 and
+# proxies to us. 2 workers is plenty for v0.1: analysis is ~300ms
+# CPU-bound per request, and our free-tier cap keeps offered-load low.
+ExecStart=/opt/voxprobabilis/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 --port 8000 \
+    --workers 2 \
+    --proxy-headers \
+    --forwarded-allow-ips 127.0.0.1
+
+Restart=on-failure
+RestartSec=5s
+
+# --- Hardening -----------------------------------------------------------
+# Fresh private /tmp per service (defense-in-depth: the audio loader
+# already deletes its tempfile, but if anything ever leaked, the FS is
+# ephemeral anyway).
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# The service writes to the DB and expects a writable /tmp for pydub.
+ReadWritePaths=/var/lib/voxprobabilis /tmp
+
+[Install]
+WantedBy=multi-user.target
