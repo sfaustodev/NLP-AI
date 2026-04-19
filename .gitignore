@@ -1,0 +1,57 @@
+# -----------------------------------------------------------
+# macOS cruft
+# -----------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# -----------------------------------------------------------
+# Python
+# -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# -----------------------------------------------------------
+# Editors / IDEs
+# -----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# -----------------------------------------------------------
+# Vox Probabilis — local state
+# -----------------------------------------------------------
+# Real secrets never enter git — only .env.example is tracked.
+backend/.env
+backend/.env.local
+
+# SQLite development DBs (production DB lives under /var/lib on the VPS)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Audio test fixtures are tracked (small, curated); user recordings are not.
+backend/tests/fixtures/personal/
+
+# -----------------------------------------------------------
+# Build artefacts
+# -----------------------------------------------------------
+dist/
+build/
+*.tar.gz
+!nlp-ai-calibrated.tar.gz
