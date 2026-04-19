@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Vox Probabilis — A voice-stress forensic instrument</title>
+<meta name="description" content="An entropy-oriented FFT analysis of the human voice. Upload a sample, receive four spectral features, a Cartesian projection, and an honest confidence verdict." />
+<meta name="theme-color" content="#0A0808" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+  /* ------------------------------------------------------------
+     PALETTE — extracted from the AGI ✕ LOGOS PROBABILIS cover.
+     ------------------------------------------------------------ */
+  :root {
+    --ink:        #0A0808;   /* near-black, warm */
+    --ink-2:      #120E0D;   /* card surface */
+    --ink-3:      #1B1413;   /* raised surface */
+    --line:       #2A211F;   /* hairline borders */
+    --line-2:     #3C2F2C;   /* hover / active borders */
+
+    --bone:       #E8DFD0;   /* primary serif text */
+    --bone-dim:   #BFB4A4;
+    --muted:      #7A6F6A;   /* subtitle / meta */
+    --muted-2:    #54494A;   /* footnote */
+
+    --crimson:    #B2231F;   /* cover red, primary accent */
+    --crimson-2:  #7A1613;   /* deeper shadow */
+    --crimson-3:  rgba(178, 35, 31, 0.18);
+
+    --good:       #7A8F5A;   /* olive — natural / calm */
+    --warn:       #C18A3B;   /* amber — medium confidence */
+    --bad:        #B2231F;   /* crimson — the deception signature */
+
+    --serif:      'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    --sans:       'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    --mono:       'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+
+    --radius:     2px;
+    --max:        1180px;
+  }
+
+  /* ------------------------------------------------------------ base */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% 12%, rgba(178, 35, 31, 0.07), transparent 60%),
+      radial-gradient(900px 500px at 50% 90%, rgba(178, 35, 31, 0.04), transparent 65%),
+      var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  img, svg { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: var(--bone); }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  ::selection { background: var(--crimson); color: var(--bone); }
+
+  /* ------------------------------------------------------------ layout */
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+  .rule {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--line), transparent);
+    margin: 0;
+    border: 0;
+  }
+
+  /* Corner tick brackets — echoes the book cover frame */
+  .framed { position: relative; }
+  .framed::before,
+  .framed::after,
+  .framed > .fr-tr,
+  .framed > .fr-bl,
+  .framed > .fr-br {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--line-2);
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .framed::before { top: 10px; left: 10px;    border-right: 0; border-bottom: 0; }
+  .framed > .fr-tr { top: 10px; right: 10px;  border-left: 0;  border-bottom: 0; }
+  .framed > .fr-bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+  .framed > .fr-br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+  /* ------------------------------------------------------------ nav */
+  .nav {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(10, 8, 8, 0.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; max-width: var(--max); margin: 0 auto;
+  }
+  .brand {
+    display: inline-flex; align-items: baseline; gap: 10px;
+    font-family: var(--serif); font-weight: 600;
+    font-size: 20px; letter-spacing: 0.02em;
+    color: var(--bone);
+  }
+  .brand .brand-vox { font-style: italic; }
+  .brand .brand-dot { color: var(--crimson); font-size: 10px; transform: translateY(-3px); }
+  .brand .brand-tag {
+    font-family: var(--sans);
+    font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+  }
+  .nav-links {
+    display: flex; gap: 28px;
+    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+  }
+  .nav-links a:hover { color: var(--bone); }
+  @media (max-width: 720px) { .nav-links { display: none; } }
+
+  /* ------------------------------------------------------------ hero */
+  .hero {
+    position: relative;
+    padding: 120px 0 88px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 0.42em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+    display: flex; justify-content: center; align-items: center; gap: 12px;
+    margin-bottom: 36px;
+  }
+  .hero-eyebrow::before, .hero-eyebrow::after {
+    content: ''; width: 28px; height: 1px; background: var(--line-2);
+  }
+
+  /* The crossed-out "AGI" — lifted directly from the cover */
+  .lockup {
+    display: inline-flex; flex-direction: column; align-items: center;
+    gap: 14px; margin-bottom: 22px;
+  }
+  .lockup-cross {
+    position: relative;
+    font-family: var(--serif); font-weight: 700;
+    font-size: clamp(64px, 12vw, 128px);
+    letter-spacing: 0.06em;
+    color: var(--crimson);
+    line-height: 1;
+    padding: 0 0.12em;
+  }
+  .lockup-cross::before, .lockup-cross::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: -6%;
+    width: 112%; height: 3px;
+    background: var(--crimson);
+    transform-origin: center;
+    box-shadow: 0 0 20px rgba(178, 35, 31, 0.35);
+  }
+  .lockup-cross::before { transform: translateY(-50%) rotate(22deg); }
+  .lockup-cross::after  { transform: translateY(-50%) rotate(-22deg); }
+
+  .lockup-title {
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    font-size: clamp(42px, 7vw, 82px);
+    letter-spacing: 0.02em;
+    color: var(--bone);
+    line-height: 1.02;
+  }
+  .lockup-subtitle {
+    font-family: var(--sans); font-weight: 500;
+    font-size: 11px; letter-spacing: 0.42em; text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .hero-lede {
+    max-width: 620px; margin: 28px auto 0;
+    font-family: var(--serif); font-size: 21px; line-height: 1.5;
+    color: var(--bone-dim); font-weight: 400;
+    font-style: italic;
+  }
+  .hero-lede em { color: var(--crimson); font-style: italic; }
+
+  .hero-cta {
+    margin-top: 48px;
+    display: inline-flex; align-items: center; gap: 18px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 24px;
+    font-family: var(--sans); font-weight: 500;
+    font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+    border: 1px solid var(--line-2);
+    background: var(--ink-2);
+    color: var(--bone);
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    border-radius: var(--radius);
+  }
+  .btn:hover { border-color: var(--crimson); background: var(--ink-3); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--crimson); border-color: var(--crimson); color: var(--bone);
+  }
+  .btn-primary:hover { background: var(--crimson-2); border-color: var(--crimson-2); }
+  .btn-ghost { background: transparent; }
+  .btn-arrow { font-family: var(--serif); font-size: 16px; letter-spacing: 0; }
+
+  .hero-meta {
+    margin-top: 72px;
+    display: flex; gap: 48px; justify-content: center; flex-wrap: wrap;
+    font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hero-meta span { display: inline-flex; align-items: center; gap: 10px; }
+  .hero-meta span::before {
+    content: ''; width: 4px; height: 4px; background: var(--crimson); border-radius: 50%;
+  }
+
+  /* ------------------------------------------------------------ sections */
+  section { padding: 88px 0; position: relative; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 18px;
+    margin-bottom: 40px; flex-wrap: wrap;
+  }
+  .section-kicker {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em;
+    color: var(--crimson); text-transform: uppercase; font-weight: 400;
+  }
+  .section-title {
+    font-family: var(--serif); font-weight: 500; font-style: italic;
+    font-size: clamp(32px, 4.5vw, 48px);
+    letter-spacing: 0.01em; line-height: 1.05;
+    color: var(--bone);
+    margin: 0;
+  }
+  .section-lede {
+    max-width: 640px;
+    font-family: var(--serif); font-size: 18px; line-height: 1.55;
+    color: var(--bone-dim); font-style: italic;
+    margin: 0 0 0 auto;
+  }
+  @media (max-width: 820px) { .section-lede { margin: 8px 0 0; } }
+
+  /* ------------------------------------------------------------ method / features */
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .feature-cell {
+    background: var(--ink-2);
+    padding: 32px 24px;
+    min-height: 220px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .feature-cell .idx {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--muted);
+  }
+  .feature-cell h3 {
+    font-family: var(--serif); font-weight: 500; font-style: italic;
+    font-size: 22px; color: var(--bone); margin: 0;
+    letter-spacing: 0.01em;
+  }
+  .feature-cell p {
+    margin: 0; color: var(--bone-dim); font-size: 14px; line-height: 1.55;
+  }
+  .feature-cell .band {
+    margin-top: auto;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  @media (max-width: 900px) { .feature-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .feature-grid { grid-template-columns: 1fr; } }
+
+  /* ------------------------------------------------------------ the ritual */
+  .ritual {
+    background:
+      linear-gradient(to bottom, transparent, rgba(178, 35, 31, 0.025), transparent),
+      var(--ink);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .ritual-grid {
+    display: grid; grid-template-columns: 260px 1fr; gap: 56px;
+  }
+  @media (max-width: 900px) { .ritual-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+  .ritual-rail { position: sticky; top: 88px; align-self: start; }
+  .rail-step {
+    display: grid; grid-template-columns: 32px 1fr; align-items: baseline;
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+    cursor: pointer;
+    transition: color 160ms ease;
+  }
+  .rail-step:last-child { border-bottom: 1px solid var(--line); }
+  .rail-step .n {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .rail-step .t {
+    font-family: var(--serif); font-style: italic; font-size: 20px;
+    color: var(--bone-dim);
+  }
+  .rail-step.is-active .t { color: var(--crimson); }
+  .rail-step.is-done .n { color: var(--crimson); }
+  .rail-step.is-done .n::before { content: '✓ '; color: var(--crimson); }
+
+  .ritual-stage {
+    position: relative;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    min-height: 520px;
+    padding: 48px 44px;
+  }
+  @media (max-width: 640px) { .ritual-stage { padding: 32px 24px; } }
+
+  .stage { display: none; }
+  .stage.is-active { display: block; }
+
+  .stage-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .stage-kicker {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--crimson); text-transform: uppercase;
+  }
+  .stage-title {
+    font-family: var(--serif); font-weight: 500; font-style: italic;
+    font-size: 32px; margin: 0; color: var(--bone);
+  }
+  .stage-prompt {
+    font-family: var(--serif); font-size: 18px; line-height: 1.55;
+    color: var(--bone-dim); font-style: italic;
+    max-width: 560px;
+  }
+  .stage-prompt strong { color: var(--crimson); font-style: normal; font-weight: 500; }
+
+  /* Upload dropzone */
+  .drop {
+    margin-top: 28px;
+    border: 1px dashed var(--line-2);
+    padding: 36px 24px;
+    text-align: center;
+    transition: border-color 160ms ease, background 160ms ease;
+    cursor: pointer;
+    background: rgba(10, 8, 8, 0.4);
+  }
+  .drop:hover, .drop.is-drag { border-color: var(--crimson); background: rgba(178, 35, 31, 0.04); }
+  .drop-icon {
+    font-family: var(--serif); font-style: italic; font-size: 42px;
+    color: var(--crimson); line-height: 1;
+  }
+  .drop-text {
+    margin-top: 12px;
+    font-family: var(--serif); font-size: 18px; font-style: italic; color: var(--bone);
+  }
+  .drop-hint {
+    margin-top: 6px;
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+  }
+  .drop input[type="file"] { display: none; }
+  .drop-file {
+    margin-top: 14px;
+    font-family: var(--mono); font-size: 12px; color: var(--bone-dim);
+  }
+
+  .stage-actions {
+    margin-top: 28px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+
+  .stage-status {
+    margin-top: 24px;
+    min-height: 22px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .stage-status.is-err { color: var(--crimson); }
+  .stage-status.is-ok  { color: var(--good); }
+
+  /* Baseline readout */
+  .baseline-panel {
+    margin-top: 24px;
+    padding: 20px 22px;
+    border: 1px solid var(--line);
+    background: var(--ink-3);
+    display: none;
+  }
+  .baseline-panel.is-open { display: block; }
+  .baseline-panel h4 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--crimson); text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  .baseline-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 6px 0;
+    font-family: var(--mono); font-size: 13px;
+    border-bottom: 1px dotted var(--line);
+  }
+  .baseline-row:last-child { border-bottom: 0; }
+  .baseline-row .k { color: var(--muted); }
+  .baseline-row .v { color: var(--bone); }
+
+  /* ------------------------------------------------------------ reveal */
+  .reveal-grid {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .reveal-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+  .quadrant-wrap {
+    position: relative;
+    padding: 28px;
+    background: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .quadrant-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 16px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .quadrant-head .q-label { color: var(--crimson); }
+  .quadrant-svg { width: 100%; height: auto; display: block; }
+
+  .quadrant-legend {
+    margin-top: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .quadrant-legend .danger { color: var(--crimson); }
+
+  .reveal-side { display: flex; flex-direction: column; gap: 20px; }
+
+  .verdict {
+    padding: 24px;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--crimson);
+    position: relative;
+  }
+  .verdict .kicker {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--crimson); text-transform: uppercase;
+  }
+  .verdict .name {
+    font-family: var(--serif); font-style: italic; font-size: 32px;
+    color: var(--bone); margin: 8px 0 8px;
+  }
+  .verdict .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    color: var(--bone-dim);
+  }
+  .confidence {
+    margin-top: 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .conf-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .conf-high .conf-dot { background: var(--good); }
+  .conf-medium .conf-dot { background: var(--warn); }
+  .conf-low .conf-dot { background: var(--crimson); }
+  .conf-unreliable .conf-dot { background: var(--muted); }
+
+  .readout {
+    padding: 20px 22px;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+  }
+  .readout h4 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--muted); text-transform: uppercase;
+    margin: 0 0 14px;
+  }
+  .readout-row {
+    display: grid; grid-template-columns: 1fr auto auto;
+    gap: 16px; align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .readout-row:last-child { border-bottom: 0; }
+  .readout-row .rk { font-family: var(--serif); font-style: italic; color: var(--bone); font-size: 15px; }
+  .readout-row .rv { font-family: var(--mono); font-size: 13px; color: var(--bone-dim); font-variant-numeric: tabular-nums; }
+  .readout-row .rd { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .rd-up   { color: var(--crimson); }
+  .rd-dn   { color: var(--good); }
+  .rd-zero { color: var(--muted); }
+
+  .method-note {
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    background: rgba(178, 35, 31, 0.035);
+    font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1.6;
+    color: var(--bone-dim);
+  }
+  .method-note::before {
+    content: '§ methodology';
+    display: block;
+    font-family: var(--mono); font-style: normal;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--crimson); margin-bottom: 8px;
+  }
+
+  /* ------------------------------------------------------------ pricing */
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; } }
+
+  .tier {
+    background: var(--ink-2);
+    padding: 36px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-height: 460px;
+  }
+  .tier-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .tier-name {
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    font-size: 26px; color: var(--bone); margin: 0;
+  }
+  .tier-badge {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--crimson);
+  }
+  .tier-price {
+    font-family: var(--serif); font-size: 46px; line-height: 1;
+    color: var(--bone); letter-spacing: -0.01em;
+  }
+  .tier-price .per {
+    font-family: var(--sans); font-size: 12px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--muted); margin-left: 6px;
+  }
+  .tier-lede {
+    font-family: var(--serif); font-style: italic; font-size: 15px;
+    color: var(--bone-dim); margin: 0;
+  }
+  .tier-list {
+    list-style: none; padding: 0; margin: 6px 0 0;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .tier-list li {
+    display: grid; grid-template-columns: 18px 1fr; gap: 10px;
+    align-items: baseline;
+    font-size: 14px; color: var(--bone-dim);
+  }
+  .tier-list li::before {
+    content: '—'; color: var(--crimson); font-family: var(--mono);
+  }
+  .tier-cta { margin-top: auto; }
+  .tier-highlight { position: relative; }
+  .tier-highlight::before {
+    content: '';
+    position: absolute; inset: 0;
+    border: 1px solid var(--crimson);
+    pointer-events: none;
+  }
+
+  /* ------------------------------------------------------------ footer */
+  .foot {
+    border-top: 1px solid var(--line);
+    padding: 48px 0 64px;
+    font-size: 12px; letter-spacing: 0.06em; color: var(--muted);
+  }
+  .foot-grid {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 32px;
+  }
+  @media (max-width: 720px) { .foot-grid { grid-template-columns: 1fr; } }
+  .foot h5 {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--bone); text-transform: uppercase;
+    margin: 0 0 14px;
+  }
+  .foot a { display: block; padding: 4px 0; }
+  .foot-small {
+    margin-top: 40px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  /* ------------------------------------------------------------ utilities */
+  .mono { font-family: var(--mono); }
+  .serif { font-family: var(--serif); }
+  .hide { display: none !important; }
+</style>
+</head>
+
+<body>
+
+<!-- ============================================================ NAV -->
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="Vox Probabilis home">
+      <span class="brand-vox">Vox</span><span class="brand-dot">●</span><span>Probabilis</span>
+      <span class="brand-tag">v0.1</span>
+    </a>
+    <div class="nav-links" role="navigation">
+      <a href="#method">Method</a>
+      <a href="#ritual">Ritual</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#paper">Paper</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+
+  <!-- ========================================================== HERO -->
+  <header class="hero framed">
+    <span class="fr-tr"></span><span class="fr-bl"></span><span class="fr-br"></span>
+    <div class="wrap">
+      <div class="hero-eyebrow">A Forensic Instrument for the Human Voice</div>
+
+      <div class="lockup">
+        <div class="lockup-cross" aria-hidden="true">AGI</div>
+        <div class="lockup-title">Logos Probabilis</div>
+        <div class="lockup-subtitle">The Senses of a New Species</div>
+      </div>
+
+      <p class="hero-lede">
+        Upload a three-second voice sample. Receive four spectral features, a
+        Cartesian projection, and — where the evidence permits — <em>an honest verdict</em>
+        about whether the voice is over-controlled, stressed, or simply itself.
+      </p>
+
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#ritual">
+          <span>Begin the Ritual</span><span class="btn-arrow">→</span>
+        </a>
+        <a class="btn btn-ghost" href="#method">Read the Method</a>
+      </div>
+
+      <div class="hero-meta">
+        <span>Raw audio never persisted</span>
+        <span>Three free analyses daily</span>
+        <span>Companion paper · DOI 19396809</span>
+      </div>
+    </div>
+  </header>
+
+  <hr class="rule" />
+
+  <!-- ========================================================== METHOD -->
+  <section id="method">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-kicker">§ ii · method</span>
+        <h2 class="section-title">Four features, one projection.</h2>
+        <p class="section-lede">
+          The instrument is a plain FFT pipeline. No neural network, no opinions &mdash;
+          four numbers extracted by methods with decades of phonetic literature behind them.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-cell">
+          <span class="idx">01 · voluntary</span>
+          <h3>Jitter <em>(local)</em></h3>
+          <p>
+            Cycle-to-cycle period variation in the vocal folds. Computed via
+            <span class="mono">parselmouth</span> (Praat). The standard measure of
+            laryngeal stability.
+          </p>
+          <div class="band">band &nbsp; 0.005 &mdash; 0.030</div>
+        </article>
+
+        <article class="feature-cell">
+          <span class="idx">02 · voluntary</span>
+          <h3>MFCC &Delta;-variance</h3>
+          <p>
+            Mean-of-variances across 13 MFCC deltas. A proxy for how much the
+            spectral envelope is permitted to wander frame by frame.
+          </p>
+          <div class="band">band &nbsp; 0.030 &mdash; 0.120</div>
+        </article>
+
+        <article class="feature-cell">
+          <span class="idx">03 · voluntary</span>
+          <h3>Spectral flux</h3>
+          <p>
+            L2 distance between successive normalised magnitude spectra (Dixon, 2006).
+            The rate at which timbre changes across the signal.
+          </p>
+          <div class="band">band &nbsp; 0.080 &mdash; 0.200</div>
+        </article>
+
+        <article class="feature-cell">
+          <span class="idx">04 · <span style="color:var(--crimson)">involuntary</span></span>
+          <h3>Micro&shy;tremor <em>8&ndash;12 Hz</em></h3>
+          <p>
+            RMS of the envelope band-passed through the physiological tremor window
+            (Lippold, 1971). This is the one the speaker cannot suppress.
+          </p>
+          <div class="band">band &nbsp; 0.002 &mdash; 0.005+</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== RITUAL -->
+  <section id="ritual" class="ritual">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-kicker">§ iii · the ritual</span>
+        <h2 class="section-title">Three samples. Then a verdict.</h2>
+        <p class="section-lede">
+          A personal baseline is required before the instrument may speak honestly.
+          The first sample calibrates; the second and third are compared against it.
+        </p>
+      </div>
+
+      <div class="ritual-grid">
+
+        <!-- Rail -->
+        <aside class="ritual-rail" aria-label="Ritual steps">
+          <div class="rail-step is-active" data-step="1">
+            <span class="n">01</span><span class="t">Truth — calibrate</span>
+          </div>
+          <div class="rail-step" data-step="2">
+            <span class="n">02</span><span class="t">Uncertain — recall</span>
+          </div>
+          <div class="rail-step" data-step="3">
+            <span class="n">03</span><span class="t">Lie — deliberate</span>
+          </div>
+          <div class="rail-step" data-step="4">
+            <span class="n">04</span><span class="t">Reveal</span>
+          </div>
+          <div class="rail-step" data-step="5">
+            <span class="n">05</span><span class="t">AI · bonus</span>
+          </div>
+        </aside>
+
+        <!-- Stage -->
+        <div class="ritual-stage framed">
+          <span class="fr-tr"></span><span class="fr-bl"></span><span class="fr-br"></span>
+
+          <!-- STEP 1 · CALIBRATE -->
+          <div class="stage is-active" data-stage="1">
+            <div class="stage-head">
+              <span class="stage-kicker">Step 01 · Truth</span>
+              <span class="stage-kicker" style="color:var(--muted)">free · does not count</span>
+            </div>
+            <h3 class="stage-title">Say something plainly true.</h3>
+            <p class="stage-prompt">
+              Name the city you are in, or the weather outside your window.
+              <strong>Five to ten seconds</strong> is enough. This becomes your
+              personal baseline &mdash; the instrument has nothing to compare against without it.
+            </p>
+
+            <label class="drop" data-drop="1">
+              <input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/flac,audio/x-m4a" />
+              <div class="drop-icon">⌁</div>
+              <div class="drop-text">Drop or choose a voice sample</div>
+              <div class="drop-hint">wav · mp3 · m4a · ogg · flac &nbsp; · &nbsp; ≤ 10 mb &nbsp; · &nbsp; 3–60 s</div>
+              <div class="drop-file" data-filename></div>
+            </label>
+
+            <div class="stage-actions">
+              <button class="btn btn-primary" data-action="calibrate">
+                <span>Calibrate baseline</span><span class="btn-arrow">→</span>
+              </button>
+              <button class="btn btn-ghost" data-action="skip-calibrate">Skip (use global baseline)</button>
+            </div>
+            <div class="stage-status" data-status="1"></div>
+
+            <div class="baseline-panel" data-baseline-panel>
+              <h4>Your baseline</h4>
+              <div class="baseline-row"><span class="k">jitter · local</span><span class="v" data-bl="jitter_local">—</span></div>
+              <div class="baseline-row"><span class="k">mfcc Δ-variance</span><span class="v" data-bl="mfcc_delta_var_mean">—</span></div>
+              <div class="baseline-row"><span class="k">spectral flux</span><span class="v" data-bl="spectral_flux_mean">—</span></div>
+              <div class="baseline-row"><span class="k">microtremor</span><span class="v" data-bl="microtremor_envelope">—</span></div>
+              <div class="baseline-row"><span class="k">voiced frame ratio</span><span class="v" data-bl="voiced_frame_ratio">—</span></div>
+            </div>
+          </div>
+
+          <!-- STEP 2 · UNCERTAIN -->
+          <div class="stage" data-stage="2">
+            <div class="stage-head">
+              <span class="stage-kicker">Step 02 · Uncertain</span>
+              <span class="stage-kicker" style="color:var(--muted)">one freebie · today</span>
+            </div>
+            <h3 class="stage-title">Say something you are unsure of.</h3>
+            <p class="stage-prompt">
+              A memory you cannot quite retrieve, a name you half-recall, a fact you
+              believe but would not bet on. <strong>Natural hesitation</strong> is expected
+              here &mdash; the instrument is not scoring you, only watching.
+            </p>
+
+            <label class="drop" data-drop="2">
+              <input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/flac,audio/x-m4a" />
+              <div class="drop-icon">⌁</div>
+              <div class="drop-text">Drop or choose a voice sample</div>
+              <div class="drop-hint">wav · mp3 · m4a · ogg · flac</div>
+              <div class="drop-file" data-filename></div>
+            </label>
+
+            <div class="stage-actions">
+              <button class="btn btn-primary" data-action="analyze" data-ritual="uncertain">
+                <span>Analyse (uncertain)</span><span class="btn-arrow">→</span>
+              </button>
+              <button class="btn btn-ghost" data-action="prev">Back</button>
+            </div>
+            <div class="stage-status" data-status="2"></div>
+          </div>
+
+          <!-- STEP 3 · LIE -->
+          <div class="stage" data-stage="3">
+            <div class="stage-head">
+              <span class="stage-kicker">Step 03 · Lie</span>
+              <span class="stage-kicker" style="color:var(--muted)">one freebie · today</span>
+            </div>
+            <h3 class="stage-title">Now say something you know to be false.</h3>
+            <p class="stage-prompt">
+              A <strong>deliberate fabrication</strong>, plainly stated. The purpose is
+              not to catch you &mdash; it is to observe the voluntary suppression and
+              involuntary tremor that accompany the act. You already know whether you lied.
+              The instrument is simply reading it off the spectrum.
+            </p>
+
+            <label class="drop" data-drop="3">
+              <input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/flac,audio/x-m4a" />
+              <div class="drop-icon">⌁</div>
+              <div class="drop-text">Drop or choose a voice sample</div>
+              <div class="drop-hint">wav · mp3 · m4a · ogg · flac</div>
+              <div class="drop-file" data-filename></div>
+            </label>
+
+            <div class="stage-actions">
+              <button class="btn btn-primary" data-action="analyze" data-ritual="lie">
+                <span>Reveal the signature</span><span class="btn-arrow">→</span>
+              </button>
+              <button class="btn btn-ghost" data-action="prev">Back</button>
+            </div>
+            <div class="stage-status" data-status="3"></div>
+          </div>
+
+          <!-- STEP 4 · REVEAL -->
+          <div class="stage" data-stage="4">
+            <div class="stage-head">
+              <span class="stage-kicker">Step 04 · Reveal</span>
+              <span class="stage-kicker" data-quota style="color:var(--muted)"></span>
+            </div>
+
+            <div class="reveal-grid">
+
+              <!-- Plot -->
+              <div class="quadrant-wrap">
+                <div class="quadrant-head">
+                  <span>Cartesian projection</span>
+                  <span class="q-label" data-q-label>—</span>
+                </div>
+                <svg class="quadrant-svg" viewBox="0 0 400 400" role="img" aria-label="Quadrant projection">
+                  <!-- quadrant fills -->
+                  <rect x="0"   y="0"   width="200" height="200" fill="rgba(178,35,31,0.09)" />
+                  <rect x="200" y="0"   width="200" height="200" fill="rgba(193,138,59,0.05)" />
+                  <rect x="0"   y="200" width="200" height="200" fill="rgba(122,143,90,0.04)" />
+                  <rect x="200" y="200" width="200" height="200" fill="rgba(122,143,90,0.07)" />
+
+                  <!-- axes -->
+                  <line x1="200" y1="10"  x2="200" y2="390" stroke="#3C2F2C" stroke-width="1" />
+                  <line x1="10"  y1="200" x2="390" y2="200" stroke="#3C2F2C" stroke-width="1" />
+
+                  <!-- grid -->
+                  <g stroke="#2A211F" stroke-width="0.5" stroke-dasharray="2 4">
+                    <line x1="100" y1="10" x2="100" y2="390" /><line x1="300" y1="10" x2="300" y2="390" />
+                    <line x1="10" y1="100" x2="390" y2="100" /><line x1="10" y1="300" x2="390" y2="300" />
+                  </g>
+
+                  <!-- axis labels -->
+                  <g font-family="JetBrains Mono" font-size="9" fill="#7A6F6A" letter-spacing="1">
+                    <text x="200" y="402" text-anchor="middle">NATURALNESS →</text>
+                    <text x="6" y="200" transform="rotate(-90 6 200)" text-anchor="middle">INVOLUNTARY STRESS →</text>
+                  </g>
+
+                  <!-- quadrant corner labels -->
+                  <g font-family="Cormorant Garamond" font-style="italic" font-size="13">
+                    <text x="14"  y="24"  fill="#B2231F">over-controlled · tense</text>
+                    <text x="386" y="24"  fill="#C18A3B" text-anchor="end">natural · stressed</text>
+                    <text x="14"  y="392" fill="#7A8F5A">over-controlled · calm</text>
+                    <text x="386" y="392" fill="#7A8F5A" text-anchor="end">natural · calm</text>
+                  </g>
+
+                  <!-- points placeholder (populated by JS) -->
+                  <g data-points></g>
+                </svg>
+                <div class="quadrant-legend">
+                  <span class="danger">● over-controlled · tense &nbsp; = &nbsp; deception signature</span>
+                  <span>● natural &nbsp; = &nbsp; unsuppressed voluntary variation</span>
+                </div>
+              </div>
+
+              <!-- Side panel -->
+              <div class="reveal-side">
+                <div class="verdict">
+                  <span class="kicker" data-verdict-kicker>quadrant</span>
+                  <div class="name" data-verdict-name>—</div>
+                  <div class="tag" data-verdict-tag>awaiting sample</div>
+                  <div class="confidence" data-confidence>
+                    <span class="conf-dot"></span><span data-confidence-label>confidence · —</span>
+                  </div>
+                </div>
+
+                <div class="readout">
+                  <h4>features &amp; deltas</h4>
+                  <div class="readout-row">
+                    <span class="rk">jitter &mdash; local</span>
+                    <span class="rv" data-f="jitter_local">—</span>
+                    <span class="rd" data-d="jitter_local_pct">—</span>
+                  </div>
+                  <div class="readout-row">
+                    <span class="rk">mfcc Δ-variance</span>
+                    <span class="rv" data-f="mfcc_delta_var_mean">—</span>
+                    <span class="rd" data-d="mfcc_delta_var_pct">—</span>
+                  </div>
+                  <div class="readout-row">
+                    <span class="rk">spectral flux</span>
+                    <span class="rv" data-f="spectral_flux_mean">—</span>
+                    <span class="rd" data-d="spectral_flux_pct">—</span>
+                  </div>
+                  <div class="readout-row">
+                    <span class="rk">microtremor</span>
+                    <span class="rv" data-f="microtremor_envelope">—</span>
+                    <span class="rd" data-d="microtremor_envelope_pct">—</span>
+                  </div>
+                </div>
+
+                <div class="method-note" data-method-note>
+                  Features are computed per the methods described in
+                  DOI&nbsp;10.5281/zenodo.19396809. The deception signature was validated
+                  on <em>n = 3</em> recordings from a single speaker. Generalisation to
+                  your voice is hypothesised but not proven.
+                </div>
+              </div>
+            </div>
+
+            <div class="stage-actions" style="margin-top: 32px;">
+              <button class="btn btn-primary" data-action="goto" data-target="5">
+                <span>Ask the AI (bonus)</span><span class="btn-arrow">→</span>
+              </button>
+              <button class="btn btn-ghost" data-action="restart">Start over</button>
+            </div>
+          </div>
+
+          <!-- STEP 5 · AI BONUS -->
+          <div class="stage" data-stage="5">
+            <div class="stage-head">
+              <span class="stage-kicker">Step 05 · AI Bonus</span>
+              <span class="stage-kicker" style="color:var(--muted)">counts against quota</span>
+            </div>
+            <h3 class="stage-title">Now let a machine speak the same words.</h3>
+            <p class="stage-prompt">
+              Generate the same sentence with any text-to-speech model you prefer
+              &mdash; upload it here. The instrument will measure whether synthetic
+              speech lands closer to <strong>over-controlled</strong> than human truth,
+              or whether modern models have learnt to tremble convincingly.
+            </p>
+
+            <label class="drop" data-drop="5">
+              <input type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/ogg,audio/flac,audio/x-m4a" />
+              <div class="drop-icon">⌁</div>
+              <div class="drop-text">Upload the AI-generated voice</div>
+              <div class="drop-hint">wav · mp3 · m4a · ogg · flac</div>
+              <div class="drop-file" data-filename></div>
+            </label>
+
+            <div class="stage-actions">
+              <button class="btn btn-primary" data-action="analyze" data-ritual="ai_bonus">
+                <span>Analyse synthetic voice</span><span class="btn-arrow">→</span>
+              </button>
+              <button class="btn btn-ghost" data-action="goto" data-target="4">Back to reveal</button>
+            </div>
+            <div class="stage-status" data-status="5"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== PRICING -->
+  <section id="pricing">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-kicker">§ iv · access</span>
+        <h2 class="section-title">Three ways in. No payment required today.</h2>
+        <p class="section-lede">
+          Paid tiers display their promises here but do not collect payment yet.
+          When billing lands in v0.2 these cards will light up with a checkout link.
+        </p>
+      </div>
+
+      <div class="pricing-grid">
+
+        <article class="tier">
+          <div class="tier-head">
+            <h3 class="tier-name">Free</h3>
+            <span class="tier-badge">live</span>
+          </div>
+          <div class="tier-price">€0<span class="per">/forever</span></div>
+          <p class="tier-lede">The full ritual, unlocked. For anyone curious about their own voice.</p>
+          <ul class="tier-list">
+            <li>Three analyses per 24 hours</li>
+            <li>Ritual freebies (truth + uncertain + lie) do not count</li>
+            <li>Session-local baseline · no account</li>
+            <li>Raw audio never persisted</li>
+          </ul>
+          <div class="tier-cta">
+            <a class="btn btn-ghost" href="#ritual">Begin the Ritual</a>
+          </div>
+        </article>
+
+        <article class="tier tier-highlight">
+          <div class="tier-head">
+            <h3 class="tier-name">Practitioner</h3>
+            <span class="tier-badge">v0.2</span>
+          </div>
+          <div class="tier-price">€14<span class="per">/month</span></div>
+          <p class="tier-lede">For therapists, journalists, security researchers working with many voices.</p>
+          <ul class="tier-list">
+            <li>Unlimited analyses</li>
+            <li>Persistent named baselines per subject</li>
+            <li>CSV &amp; PDF export of feature tables</li>
+            <li>API key for scripted workflows</li>
+          </ul>
+          <div class="tier-cta">
+            <button class="btn" data-action="waitlist">Join the v0.2 waitlist</button>
+          </div>
+        </article>
+
+        <article class="tier">
+          <div class="tier-head">
+            <h3 class="tier-name">Laboratory</h3>
+            <span class="tier-badge">v0.3</span>
+          </div>
+          <div class="tier-price">custom<span class="per"></span></div>
+          <p class="tier-lede">For institutions running studies with informed-consent cohorts.</p>
+          <ul class="tier-list">
+            <li>Batch upload &amp; analysis pipeline</li>
+            <li>Dedicated baseline cohort management</li>
+            <li>Self-hosted option &mdash; audio never leaves your network</li>
+            <li>Citation support &amp; methods review</li>
+          </ul>
+          <div class="tier-cta">
+            <a class="btn" href="mailto:hello@voxprobabilis.com">Write to us</a>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== PAPER CALLOUT -->
+  <section id="paper">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-kicker">§ v · the companions</span>
+        <h2 class="section-title">Read the method. Read the book.</h2>
+        <p class="section-lede">
+          Every claim made here is either derived from or disclaimed in these two
+          open-access documents. Honest instruments travel with their own errata.
+        </p>
+      </div>
+
+      <div class="feature-grid" style="grid-template-columns: 1fr 1fr;">
+        <article class="feature-cell">
+          <span class="idx">companion · paper</span>
+          <h3>An Entropy-Oriented FFT Analysis of Voice Stress</h3>
+          <p>
+            Fausto &amp; Claude, 2026. The empirical ground truth for every
+            threshold, range, and quadrant boundary in the instrument above.
+          </p>
+          <div class="band">
+            <a href="https://doi.org/10.5281/zenodo.19396809" target="_blank" rel="noreferrer noopener" style="color:var(--crimson)">doi.org/10.5281/zenodo.19396809 →</a>
+          </div>
+        </article>
+        <article class="feature-cell">
+          <span class="idx">companion · book</span>
+          <h3>AGI ✕ Logos Probabilis — The Senses of a New Species</h3>
+          <p>
+            The broader argument: why voice is a modality a new species of
+            intelligence must learn to read, not merely speak in.
+          </p>
+          <div class="band">
+            <a href="https://doi.org/10.5281/zenodo.19478167" target="_blank" rel="noreferrer noopener" style="color:var(--crimson)">doi.org/10.5281/zenodo.19478167 →</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== FOOTER -->
+  <footer class="foot">
+    <div class="wrap foot-grid">
+      <div>
+        <a class="brand" href="#top" style="margin-bottom: 14px;">
+          <span class="brand-vox">Vox</span><span class="brand-dot">●</span><span>Probabilis</span>
+        </a>
+        <p style="max-width: 420px; color: var(--muted); font-family: var(--serif); font-style: italic; font-size: 15px;">
+          A small, honest instrument for reading the human voice. Built with the
+          conviction that AI tools should report their own uncertainty out loud.
+        </p>
+      </div>
+      <div>
+        <h5>The instrument</h5>
+        <a href="#method">Method</a>
+        <a href="#ritual">Ritual</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#paper">Paper &amp; Book</a>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <a href="mailto:hello@voxprobabilis.com">hello@voxprobabilis.com</a>
+        <a href="https://doi.org/10.5281/zenodo.19396809" target="_blank" rel="noreferrer noopener">Paper (Zenodo)</a>
+        <a href="https://doi.org/10.5281/zenodo.19478167" target="_blank" rel="noreferrer noopener">Book (Zenodo)</a>
+        <a href="#">MIT · source coming soon</a>
+      </div>
+    </div>
+    <div class="wrap foot-small">
+      <span>© 2026 Fausto, J. &amp; Claude — Anthropic. MIT-licensed instrument.</span>
+      <span>Raw audio &mdash; never persisted. Features &mdash; opt-in only.</span>
+    </div>
+  </footer>
+
+</main>
+
+<!-- ============================================================ SCRIPT -->
+<script>
+/* ------------------------------------------------------------------
+ * Vox Probabilis — frontend v0.1
+ * Mock backend lives at window.VOX_MOCK; when the real FastAPI app
+ * ships, flip VOX_USE_MOCK to false and fetch() calls hit /api/*.
+ * ------------------------------------------------------------------ */
+const VOX_USE_MOCK = true;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/* ---------- state ---------- */
+const state = {
+  step:       1,
+  baseline:   null,
+  results:    {},
+  quota:      { remaining_today: 3, resets_at: null },
+  files:      {},
+};
+
+/* ---------- DOM helpers ---------- */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+function go(step) {
+  state.step = step;
+  $$('.stage').forEach(s => s.classList.toggle('is-active', +s.dataset.stage === step));
+  $$('.rail-step').forEach(r => {
+    const n = +r.dataset.step;
+    r.classList.toggle('is-active', n === step);
+    r.classList.toggle('is-done',   n <  step);
+  });
+  const el = $('.ritual-stage');
+  if (el && window.innerWidth < 900) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setStatus(step, text, kind) {
+  const el = $(`[data-status="${step}"]`);
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.remove('is-err', 'is-ok');
+  if (kind) el.classList.add(`is-${kind}`);
+}
+
+function clearChildren(node) {
+  while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function fmtNum(x, digits = 5) {
+  if (x === null || x === undefined || Number.isNaN(x)) return '—';
+  return Number(x).toFixed(digits);
+}
+function fmtPct(x) {
+  if (x === null || x === undefined || Number.isNaN(x)) return '—';
+  const s = x >= 0 ? '+' : '';
+  return `${s}${Number(x).toFixed(2)}%`;
+}
+function deltaClass(x) {
+  if (x === null || x === undefined || Number.isNaN(x)) return 'rd-zero';
+  if (Math.abs(x) < 1) return 'rd-zero';
+  return x > 0 ? 'rd-up' : 'rd-dn';
+}
+
+/* ---------- rail navigation ---------- */
+$$('.rail-step').forEach(r => r.addEventListener('click', () => {
+  const target = +r.dataset.step;
+  if (target === 1) return go(1);
+  if (target === 2 && !state.baseline) return setStatus(1, 'calibrate first — or skip to use the global baseline.', 'err');
+  if (target === 3 && !state.results.uncertain && !state.baseline) return;
+  if (target === 4 && !state.results.uncertain && !state.results.lie) return;
+  go(target);
+}));
+
+/* ---------- dropzones ---------- */
+$$('.drop').forEach(drop => {
+  const step = +drop.dataset.drop;
+  const input = $('input[type="file"]', drop);
+  const name  = $('[data-filename]', drop);
+
+  drop.addEventListener('click', e => {
+    if (e.target === input) return;
+    input.click();
+  });
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('is-drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('is-drag');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+  input.addEventListener('change', () => {
+    const f = input.files[0];
+    if (!f) return;
+    state.files[step] = f;
+    name.textContent = `${f.name} · ${(f.size / 1024).toFixed(1)} KB`;
+  });
+});
+
+/* ---------- API client (swap VOX_USE_MOCK for real backend) ---------- */
+async function apiCalibrate(file) {
+  if (VOX_USE_MOCK) return window.VOX_MOCK.calibrate(file);
+  const fd = new FormData(); fd.append('audio', file); fd.append('label', 'truth');
+  const r = await fetch('/api/calibrate', { method: 'POST', body: fd });
+  const body = await r.json();
+  if (!r.ok) throw body.error || { code: 'INTERNAL_ERROR', message: 'Unknown error' };
+  return body;
+}
+async function apiAnalyze(file, ritual_step, opt_in) {
+  if (VOX_USE_MOCK) return window.VOX_MOCK.analyze(file, ritual_step);
+  const fd = new FormData(); fd.append('audio', file);
+  if (ritual_step) fd.append('ritual_step', ritual_step);
+  if (opt_in)      fd.append('opt_in_dataset', 'true');
+  const r = await fetch('/api/analyze', { method: 'POST', body: fd });
+  const body = await r.json();
+  if (!r.ok) throw body.error || { code: 'INTERNAL_ERROR', message: 'Unknown error' };
+  return body;
+}
+
+/* ---------- action handlers ---------- */
+function requireFile(step) {
+  const f = state.files[step];
+  if (!f) { setStatus(step, 'select a voice sample first.', 'err'); return null; }
+  return f;
+}
+
+async function onCalibrate() {
+  const f = requireFile(1);
+  if (!f) return;
+  setStatus(1, 'analysing truth sample…');
+  try {
+    const r = await apiCalibrate(f);
+    state.baseline = r.baseline;
+    fillBaselinePanel(r);
+    setStatus(1, `baseline established · duration ${fmtNum(r.sample_duration_s, 2)}s · voiced ${(r.voiced_frame_ratio*100).toFixed(0)}%`, 'ok');
+    setTimeout(() => go(2), 700);
+  } catch (e) {
+    setStatus(1, `${e.code || 'ERROR'} — ${e.message || e}`, 'err');
+  }
+}
+
+function onSkipCalibrate() {
+  state.baseline = { source: 'global' };
+  setStatus(1, 'using global baseline · all subsequent analyses will report confidence=low.', 'ok');
+  setTimeout(() => go(2), 500);
+}
+
+async function onAnalyze(btn) {
+  const ritual = btn.dataset.ritual || null;
+  const step   = state.step;
+  const f = requireFile(step);
+  if (!f) return;
+  setStatus(step, 'analysing…');
+  try {
+    const r = await apiAnalyze(f, ritual);
+    state.results[ritual || 'free'] = r;
+    if (r.quota) state.quota = r.quota;
+    paintReveal();
+    setStatus(step, `done · ${r.projection.quadrant}`, 'ok');
+    setTimeout(() => go(ritual === 'uncertain' ? 3 : 4), 700);
+  } catch (e) {
+    setStatus(step, `${e.code || 'ERROR'} — ${e.message || e}`, 'err');
+  }
+}
+
+function onRestart() {
+  state.baseline = null; state.results = {}; state.files = {};
+  $$('[data-filename]').forEach(x => x.textContent = '');
+  $$('[data-bl]').forEach(x => x.textContent = '—');
+  $('[data-baseline-panel]').classList.remove('is-open');
+  $$('.stage-status').forEach(x => { x.textContent = ''; x.classList.remove('is-ok','is-err'); });
+  clearChildren($('[data-points]'));
+  go(1);
+}
+
+function onWaitlist() {
+  alert('v0.2 waitlist — drop us a line at hello@voxprobabilis.com and we’ll add you. Billing lands when the baseline calibration is validated on n > 30 speakers.');
+}
+
+/* ---------- wire up buttons ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-action]');
+  if (!b) return;
+  const action = b.dataset.action;
+  if (action === 'calibrate')           onCalibrate();
+  else if (action === 'skip-calibrate') onSkipCalibrate();
+  else if (action === 'analyze')        onAnalyze(b);
+  else if (action === 'prev')           go(Math.max(1, state.step - 1));
+  else if (action === 'goto')           go(+b.dataset.target);
+  else if (action === 'restart')        onRestart();
+  else if (action === 'waitlist')       onWaitlist();
+});
+
+/* ---------- painters ---------- */
+function fillBaselinePanel(r) {
+  const p = $('[data-baseline-panel]');
+  p.classList.add('is-open');
+  $('[data-bl="jitter_local"]').textContent         = fmtNum(r.baseline.jitter_local);
+  $('[data-bl="mfcc_delta_var_mean"]').textContent  = fmtNum(r.baseline.mfcc_delta_var_mean);
+  $('[data-bl="spectral_flux_mean"]').textContent   = fmtNum(r.baseline.spectral_flux_mean);
+  $('[data-bl="microtremor_envelope"]').textContent = fmtNum(r.baseline.microtremor_envelope);
+  $('[data-bl="voiced_frame_ratio"]').textContent   = (r.voiced_frame_ratio*100).toFixed(0) + '%';
+}
+
+const QUADRANT_COPY = {
+  OVER_CONTROLLED_TENSE: {
+    tag: 'the deception signature — voluntary variation suppressed while involuntary tremor rises',
+    kicker: 'quadrant · danger',
+  },
+  NATURAL_STRESSED: {
+    tag: 'voluntary variation present, but the body is registering stress independently',
+    kicker: 'quadrant · honest-under-pressure',
+  },
+  OVER_CONTROLLED_CALM: {
+    tag: 'voluntary variation suppressed, no involuntary tremor — a performed but calm delivery',
+    kicker: 'quadrant · performed-calm',
+  },
+  NATURAL_CALM: {
+    tag: 'voluntary variation present, no involuntary tremor — a voice simply being itself',
+    kicker: 'quadrant · baseline',
+  },
+  ORIGIN: {
+    tag: 'both axes near zero — report as ambiguous',
+    kicker: 'quadrant · origin',
+  },
+};
+
+const CONF_COPY = {
+  high:        'confidence · high',
+  medium:      'confidence · medium',
+  low:         'confidence · low · global baseline',
+  unreliable:  'confidence · unreliable — resample',
+};
+
+/* Create an SVG element in the SVG namespace and set attributes */
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  if (attrs) for (const k of Object.keys(attrs)) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function paintReveal() {
+  const r = state.results.lie || state.results.uncertain || state.results.free || state.results.ai_bonus;
+  if (!r) return;
+
+  const quadrantHuman = r.projection.quadrant.replaceAll('_', ' · ').toLowerCase();
+  $('[data-verdict-name]').textContent   = quadrantHuman;
+  $('[data-verdict-tag]').textContent    = QUADRANT_COPY[r.projection.quadrant]?.tag || '';
+  $('[data-verdict-kicker]').textContent = QUADRANT_COPY[r.projection.quadrant]?.kicker || 'quadrant';
+  $('[data-q-label]').textContent        = quadrantHuman;
+
+  const conf = $('[data-confidence]');
+  conf.className = 'confidence conf-' + (r.confidence || 'unreliable');
+  $('[data-confidence-label]').textContent = CONF_COPY[r.confidence] || `confidence · ${r.confidence}`;
+
+  for (const k of ['jitter_local','mfcc_delta_var_mean','spectral_flux_mean','microtremor_envelope']) {
+    $(`[data-f="${k}"]`).textContent = fmtNum(r.features[k]);
+  }
+  for (const k of ['jitter_local_pct','mfcc_delta_var_pct','spectral_flux_pct','microtremor_envelope_pct']) {
+    const el = $(`[data-d="${k}"]`);
+    const v = r.deltas[k];
+    el.textContent = fmtPct(v);
+    el.className = 'rd ' + deltaClass(v);
+  }
+
+  if (r.quota) {
+    $('[data-quota]').textContent = `quota · ${r.quota.remaining_today} of 3 remaining today`;
+  }
+
+  if (r.methodology_note) {
+    const note = $('[data-method-note]');
+    clearChildren(note);
+    const em = document.createElement('em');
+    em.textContent = r.methodology_note;
+    note.appendChild(em);
+  }
+
+  // Paint a point onto the plot, using safe SVG DOM construction
+  const g = $('[data-points]');
+  const nx = 200 + r.projection.naturalness * 180;
+  const ny = 200 - r.projection.involuntary_stress * 180;
+
+  const label = state.results.lie ? 'lie' : state.results.uncertain ? 'uncertain' : 'analysis';
+  const color = label === 'lie' ? '#B2231F' : label === 'uncertain' ? '#C18A3B' : '#E8DFD0';
+
+  const group = svgEl('g');
+  group.appendChild(svgEl('circle', { cx: nx, cy: ny, r: 9, fill: color, 'fill-opacity': '0.16' }));
+  group.appendChild(svgEl('circle', { cx: nx, cy: ny, r: 4.5, fill: color }));
+  const text = svgEl('text', {
+    x: nx + 10, y: ny + 4,
+    'font-family': 'JetBrains Mono', 'font-size': '10',
+    fill: color, 'letter-spacing': '1',
+  });
+  text.textContent = label;
+  group.appendChild(text);
+  g.appendChild(group);
+}
+
+/* ------------------------------------------------------------------
+ * MOCK BACKEND — matches §6 of the SPEC exactly.
+ * ------------------------------------------------------------------ */
+window.VOX_MOCK = (() => {
+  const GLOBAL = {
+    jitter_local: 0.0182,
+    mfcc_delta_var_mean: 0.0471,
+    spectral_flux_mean: 0.1284,
+    microtremor_envelope: 0.0034,
+  };
+
+  let mockBaseline = null;
+  const pct   = (sample, baseline) => ((sample - baseline) / baseline) * 100;
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+  const tanh  = x => Math.tanh(x);
+  const rand  = (lo, hi) => lo + Math.random() * (hi - lo);
+  const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+  function deriveBaseline() {
+    return {
+      jitter_local:         rand(0.012, 0.024),
+      mfcc_delta_var_mean:  rand(0.035, 0.075),
+      spectral_flux_mean:   rand(0.100, 0.160),
+      microtremor_envelope: rand(0.0025, 0.0042),
+    };
+  }
+
+  function simulate(ritual) {
+    const base = mockBaseline || GLOBAL;
+    const profiles = {
+      uncertain: { jitter: 0.95, mfcc: 0.90, flux: 0.92, tremor: 1.20 },
+      lie:       { jitter: 0.72, mfcc: 0.62, flux: 0.55, tremor: 1.55 },
+      ai_bonus:  { jitter: 0.35, mfcc: 0.30, flux: 0.28, tremor: 0.20 },
+      free:      { jitter: 1.02, mfcc: 1.01, flux: 0.98, tremor: 1.05 },
+    };
+    const p = profiles[ritual] || profiles.free;
+
+    const features = {
+      jitter_local:         +(base.jitter_local         * (p.jitter + rand(-0.05, 0.05))).toFixed(5),
+      mfcc_delta_var_mean:  +(base.mfcc_delta_var_mean  * (p.mfcc   + rand(-0.05, 0.05))).toFixed(5),
+      spectral_flux_mean:   +(base.spectral_flux_mean   * (p.flux   + rand(-0.05, 0.05))).toFixed(5),
+      microtremor_envelope: +(base.microtremor_envelope * (p.tremor + rand(-0.08, 0.08))).toFixed(5),
+    };
+
+    const deltas = {
+      jitter_local_pct:          +clamp(pct(features.jitter_local,         base.jitter_local),         -100, 500).toFixed(2),
+      mfcc_delta_var_pct:        +clamp(pct(features.mfcc_delta_var_mean,  base.mfcc_delta_var_mean),  -100, 500).toFixed(2),
+      spectral_flux_pct:         +clamp(pct(features.spectral_flux_mean,   base.spectral_flux_mean),   -100, 500).toFixed(2),
+      microtremor_envelope_pct:  +clamp(pct(features.microtremor_envelope, base.microtremor_envelope), -100, 500).toFixed(2),
+    };
+
+    const voluntary   = (deltas.jitter_local_pct + deltas.mfcc_delta_var_pct + deltas.spectral_flux_pct) / 3 / 100;
+    const naturalness = tanh(voluntary * 2);
+    const stress      = tanh((deltas.microtremor_envelope_pct / 100) * 2);
+
+    let quadrant;
+    if (Math.abs(naturalness) < 0.05 && Math.abs(stress) < 0.05) quadrant = 'ORIGIN';
+    else if (naturalness < 0 && stress > 0) quadrant = 'OVER_CONTROLLED_TENSE';
+    else if (naturalness > 0 && stress > 0) quadrant = 'NATURAL_STRESSED';
+    else if (naturalness < 0 && stress < 0) quadrant = 'OVER_CONTROLLED_CALM';
+    else                                     quadrant = 'NATURAL_CALM';
+
+    const baseline_source = mockBaseline ? 'session' : 'global';
+    const confidence = mockBaseline ? 'medium' : 'low';
+
+    return {
+      features,
+      deltas,
+      projection: {
+        naturalness:        +naturalness.toFixed(3),
+        involuntary_stress: +stress.toFixed(3),
+        quadrant,
+      },
+      confidence,
+      confidence_reason: mockBaseline
+        ? 'Per-session baseline from calibration used.'
+        : 'Global baseline (n=3) used — calibrate for a personal baseline.',
+      baseline_source,
+      sample_duration_s:  +rand(4, 6).toFixed(2),
+      voiced_frame_ratio: +rand(0.65, 0.92).toFixed(2),
+      methodology_note:
+        'Features are computed per the methods described in DOI 10.5281/zenodo.19396809. ' +
+        'The deception signature was validated on n=3 recordings from a single speaker. ' +
+        'Generalisation to your voice is hypothesised but not proven.',
+      quota: {
+        remaining_today: Math.max(0, 3 - Object.keys(state.results).filter(k => k === 'free' || k === 'ai_bonus').length),
+        resets_at: new Date(Date.now() + 86400000).toISOString(),
+      },
+    };
+  }
+
+  return {
+    async calibrate(file) {
+      await sleep(600);
+      mockBaseline = deriveBaseline();
+      return {
+        session_id: 'mock_' + Math.random().toString(36).slice(2, 10),
+        baseline_established: true,
+        baseline: mockBaseline,
+        sample_duration_s: +rand(4, 6).toFixed(2),
+        voiced_frame_ratio: +rand(0.7, 0.9).toFixed(2),
+      };
+    },
+    async analyze(file, ritual_step) {
+      await sleep(550);
+      return simulate(ritual_step || 'free');
+    },
+  };
+})();
+
+/* ---------- init ---------- */
+go(1);
+</script>
+
+</body>
+</html>
