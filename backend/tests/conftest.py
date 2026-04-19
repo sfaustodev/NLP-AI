@@ -104,9 +104,15 @@ def wav_too_short() -> bytes:
 
 @pytest.fixture()
 def wav_silence() -> bytes:
-    """A 5-second near-silent clip — should trip NO_VOICE_DETECTED."""
+    """A 5-second zero-filled clip — should trip NO_VOICE_DETECTED.
+
+    A flat DC constant (e.g. 1e-5 * ones) would fool librosa.effects.split
+    because *every* sample sits at the peak, so nothing gets classified as
+    silent relative to the reference. True zeros give -inf dB, which falls
+    cleanly below any top_db threshold.
+    """
     sr = 16_000
-    y = (1e-5 * np.ones(5 * sr, dtype=np.float32))
+    y = np.zeros(5 * sr, dtype=np.float32)
     buf = io.BytesIO()
     sf.write(buf, y, sr, format="WAV", subtype="PCM_16")
     return buf.getvalue()
