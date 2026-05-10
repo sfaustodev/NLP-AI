@@ -19,6 +19,11 @@ WorkingDirectory=/opt/voxprobabilis/backend
 
 # Virtualenv is created under /opt/voxprobabilis/venv during install.
 Environment="PATH=/opt/voxprobabilis/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# librosa.effects.split lazily imports numba modules whose @jit decorators
+# build a FunctionCache. With ProtectSystem=strict the venv path is read-only,
+# so numba's default locator fails (RuntimeError: cannot cache function ...).
+# Redirecting the cache to PrivateTmp keeps the hardening intact.
+Environment="NUMBA_CACHE_DIR=/tmp/numba"
 EnvironmentFile=/opt/voxprobabilis/.env
 
 # uvicorn binds to 127.0.0.1:8002 (DEPLOY.md §6.1) — nginx terminates
