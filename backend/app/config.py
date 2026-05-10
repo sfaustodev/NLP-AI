@@ -47,6 +47,7 @@ def _get_int(name: str, default: int) -> int:
 class Settings:
     # Security
     secret_salt: str
+    metrics_key: str | None
 
     # Storage
     db_path: Path
@@ -58,6 +59,8 @@ class Settings:
     max_upload_mb: int
     free_daily_quota: int
     cors_origins: tuple[str, ...]
+    liveness_mode: str
+    hostname: str
 
 
 def _load() -> Settings:
@@ -73,8 +76,15 @@ def _load() -> Settings:
     origins_raw = os.environ.get("VOX_CORS_ORIGINS", "").strip()
     origins = tuple(o.strip() for o in origins_raw.split(",") if o.strip()) if origins_raw else ()
 
+    liveness = _get("VOX_LIVENESS_MODE", "off").lower()
+    if liveness not in ("off", "boolean", "full"):
+        liveness = "off"
+
+    metrics_key = os.environ.get("VOX_METRICS_KEY", "").strip() or None
+
     return Settings(
         secret_salt=salt,
+        metrics_key=metrics_key,
         db_path=Path(_get("VOX_DB_PATH", "./vox.db")).expanduser().resolve(),
         static_dir=Path(_get("VOX_STATIC_DIR", "../landing_page")).expanduser().resolve(),
         log_level=_get("VOX_LOG_LEVEL", "INFO").upper(),
@@ -82,6 +92,8 @@ def _load() -> Settings:
         max_upload_mb=_get_int("VOX_MAX_UPLOAD_MB", 10),
         free_daily_quota=_get_int("VOX_FREE_DAILY_QUOTA", 3),
         cors_origins=origins,
+        liveness_mode=liveness,
+        hostname=_get("VOX_HOSTNAME", "voxprobabilis.com"),
     )
 
 

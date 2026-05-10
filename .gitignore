@@ -39,6 +39,9 @@ ENV/
 backend/.env
 backend/.env.local
 
+# Cloudflare Origin TLS — local copies, deployed to /etc/ssl/voxprobabilis/ on VPS
+backend/secrets/
+
 # SQLite development DBs (production DB lives under /var/lib on the VPS)
 *.db
 *.db-journal
