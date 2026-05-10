@@ -37,6 +37,10 @@ All config is env-driven; see [`.env.example`](.env.example). The only required 
 | `VOX_FREE_DAILY_QUOTA` | `3` | Normal analyses per UTC day; ritual freebies don't count. |
 | `VOX_CORS_ORIGINS` | *(empty)* | Comma-separated allowlist; empty disables CORS middleware. |
 | `VOX_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING`. |
+| `VOX_HOSTNAME` | `voxprobabilis.com` | Public hostname (used for self-references). |
+| `VOX_LIVENESS_MODE` | `off` | DEPLOY.md §4. `off` / `boolean` / `full`. Unknown → `off`. |
+| `VOX_METRICS_KEY` | *(empty)* | Empty disables `/api/metrics`. Generate with `secrets.token_urlsafe(32)`. |
+| `VOX_TLS_CERT_PATH`, `VOX_TLS_KEY_PATH` | *(reference only)* | Document where the Cloudflare Origin cert + key live; the app does not load them. |
 
 ## Running the tests
 
@@ -65,35 +69,60 @@ curl -F "audio=@path/to/juans_truth_sample.wav" http://localhost:8000/api/calibr
 
 ## Deployment
 
-Architecture on the VPS (decided 2026-04-18, see commit history):
+Authoritative runbook: [`../landing_page/DEPLOY.md`](../landing_page/DEPLOY.md). The summary below is for operators who already read it once.
 
-- **Docker stack owns :80** for the existing `infra-*` containers — do **not** touch it.
-- **nginx owns :443 only**, terminates TLS for `voxprobabilis.com`, and proxies everything to `127.0.0.1:8000` (uvicorn).
-- **Cloudflare** handles the 80 → 443 redirect at the edge.
-- The existing Rust `nda-backend` on :3000 is untouched — different hostname.
+Architecture (DEPLOY.md §2):
 
-### First-time VPS setup
+- **Cloudflare proxied** (orange cloud) for `voxprobabilis.com` + `www.voxprobabilis.com`.
+- **Cloudflare Origin certificate** (15-yr validity) installed at `/etc/ssl/voxprobabilis/{cert,key}.pem`. SSL/TLS mode = **Full (strict)**.
+- **nginx** owns :443 (and :80 for the 301 redirect), terminates TLS with the origin cert, proxies to `127.0.0.1:8002`.
+- **uvicorn** binds `127.0.0.1:8002`, 2 workers, under systemd as `vox` user.
+- The existing Rust service on this VPS stays untouched — different hostname / different vhost.
+
+### Pre-flight (Juan's tasks before code lands on the box)
+
+Walk-through in DEPLOY.md §3:
+
+1. Porkbun → Cloudflare nameservers (5–30 min propagation).
+2. Cloudflare DNS A records `@` and `www` → VPS IPv4, both proxied.
+3. Cloudflare SSL/TLS = Full (strict); HSTS 6 mo, no subdomains; min TLS 1.2.
+4. Cloudflare → SSL/TLS → Origin Server → Create Certificate (15 yr, PEM). Save cert + key — **shown once**.
+5. Optional: Porkbun email forwarding for `contact@voxprobabilis.com`.
+
+### First-time VPS setup (DEPLOY.md §6.2)
 
 ```bash
 # System deps (one-time)
 sudo apt update
-sudo apt install -y python3.12 python3.12-venv ffmpeg libsndfile1 sqlite3
+sudo apt install -y python3.11 python3.11-venv ffmpeg libsndfile1 sqlite3 git nginx ufw fail2ban
 
 # Service user + dirs
-sudo useradd -r -s /bin/false vox
-sudo mkdir -p /opt/voxprobabilis /var/lib/voxprobabilis
-sudo chown -R vox:vox /opt/voxprobabilis /var/lib/voxprobabilis
+sudo useradd -r -s /bin/false vox || true
+sudo mkdir -p /opt/voxprobabilis /var/lib/voxprobabilis /var/log/voxprobabilis /etc/ssl/voxprobabilis
+sudo chown -R vox:vox /var/lib/voxprobabilis /var/log/voxprobabilis
 
 # Code + venv
-sudo -u vox git clone https://github.com/<org>/NLP-AI.git /opt/voxprobabilis
-sudo -u vox python3.12 -m venv /opt/voxprobabilis/venv
+sudo -u vox git clone https://github.com/sfaustodev/NLP-AI.git /opt/voxprobabilis
+sudo -u vox python3.11 -m venv /opt/voxprobabilis/venv
+sudo -u vox /opt/voxprobabilis/venv/bin/pip install -U pip
 sudo -u vox /opt/voxprobabilis/venv/bin/pip install -r /opt/voxprobabilis/backend/requirements.txt
 
-# Env
+# DB
+sudo -u vox sqlite3 /var/lib/voxprobabilis/vox.db < /opt/voxprobabilis/backend/migrations/001_initial.sql
+sudo -u vox chmod 600 /var/lib/voxprobabilis/vox.db
+
+# Env (set VOX_COOKIE_SECURE=true, VOX_DB_PATH=/var/lib/voxprobabilis/vox.db,
+#      VOX_SECRET_SALT=<generated>, VOX_LIVENESS_MODE=off, VOX_METRICS_KEY=<generated>)
 sudo -u vox cp /opt/voxprobabilis/backend/.env.example /opt/voxprobabilis/.env
-sudo -u vox python3 -c "import secrets; print('VOX_SECRET_SALT=' + secrets.token_urlsafe(32))" \
-    | sudo tee -a /opt/voxprobabilis/.env
-# Edit /opt/voxprobabilis/.env: set VOX_COOKIE_SECURE=true, VOX_DB_PATH=/var/lib/voxprobabilis/vox.db
+sudo -u vox chmod 600 /opt/voxprobabilis/.env
+# (edit /opt/voxprobabilis/.env in your editor of choice)
+
+# Cloudflare Origin TLS — paste content from §3.4 dialog
+sudo nano /etc/ssl/voxprobabilis/cert.pem
+sudo nano /etc/ssl/voxprobabilis/key.pem
+sudo chmod 644 /etc/ssl/voxprobabilis/cert.pem
+sudo chmod 600 /etc/ssl/voxprobabilis/key.pem
+sudo chown root:root /etc/ssl/voxprobabilis/*
 
 # systemd
 sudo cp /opt/voxprobabilis/backend/deploy/voxprobabilis.service /etc/systemd/system/
@@ -101,24 +130,60 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now voxprobabilis
 sudo journalctl -u voxprobabilis -f   # watch it boot
 
-# nginx (only after DNS is live)
+# nginx
 sudo ln -s /opt/voxprobabilis/backend/deploy/nginx.conf /etc/nginx/sites-enabled/voxprobabilis
-sudo nginx -t && sudo systemctl reload nginx
-sudo systemctl enable nginx    # it was installed but inactive — enable now
+sudo nginx -t                                # MUST pass
+sudo systemctl reload nginx
 
-# TLS (once DNS resolves)
-sudo certbot --nginx -d voxprobabilis.com -d www.voxprobabilis.com
+# Daily SQLite backup (DEPLOY §11)
+sudo install -m 755 /opt/voxprobabilis/backend/deploy/voxprobabilis-backup.sh \
+                    /etc/cron.daily/voxprobabilis-backup
+sudo /etc/cron.daily/voxprobabilis-backup     # one dry run
+
+# UFW
+sudo ufw allow ssh
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
 ```
 
 ### Verifying the deploy
 
 ```bash
 # On the VPS
-curl -s http://127.0.0.1:8000/api/health | jq    # local, before nginx
+curl -s http://127.0.0.1:8002/api/health | jq
 curl -sk https://voxprobabilis.com/api/health | jq
+curl -s  https://voxprobabilis.com/privacy | grep -c '<title>'   # expect 1
+curl -s  https://voxprobabilis.com/terms   | grep -c '<title>'   # expect 1
 ```
 
-Both should return `{"status":"ok","version":"0.1.0"}`. A `503` with `reason: ffmpeg not available` means the `apt install ffmpeg` step didn't stick — fix it before anything else.
+Health should return `{"status":"ok","version":"0.1.0"}`. A `503 reason: ffmpeg not available` means the `apt install ffmpeg` step didn't stick — fix it before anything else. A `503 reason: parselmouth missing` means the venv install dropped praat-parselmouth — `pip install --force-reinstall praat-parselmouth==0.4.5`.
+
+Full smoke + DoD: DEPLOY.md §10 + §15.
+
+## ROLLBACK
+
+If the deploy breaks something (especially the existing Rust service), the path back is short and reversible. Memorize the first three lines.
+
+```bash
+# 1. Disable the Vox Probabilis nginx site
+sudo rm /etc/nginx/sites-enabled/voxprobabilis
+sudo nginx -t && sudo systemctl reload nginx
+
+# 2. Stop and disable the service
+sudo systemctl stop voxprobabilis
+sudo systemctl disable voxprobabilis
+
+# 3. (Optional) Remove the daily backup hook
+sudo rm /etc/cron.daily/voxprobabilis-backup
+
+# 4. (Optional, only if removing fully) wipe code + DB
+#    sudo rm -rf /opt/voxprobabilis /var/lib/voxprobabilis \
+#                /etc/systemd/system/voxprobabilis.service
+#    sudo systemctl daemon-reload
+```
+
+DNS at Cloudflare: pause the site or change A record back to its previous value. Note that this won't unbreak the Rust service if the breakage was nginx — fix nginx first.
 
 ### Updating after a code push
 
@@ -129,6 +194,16 @@ sudo systemctl restart voxprobabilis
 ```
 
 Migrations are idempotent and apply on boot, so no manual SQL step.
+
+## LGPD compliance
+
+Brazilian Lei Geral de Proteção de Dados Art. 11 classifies voice as sensitive personal data. Three pieces are non-negotiable before public link:
+
+- `/privacy` — verbatim policy from DEPLOY.md §9.1.1, served by FastAPI from `landing_page/privacy.html`.
+- `/terms` — verbatim ToS from DEPLOY.md §9.1.2, from `landing_page/terms.html`.
+- `contact@voxprobabilis.com` — DPO inbox, set up via Porkbun email forwarding (DEPLOY §3.1).
+
+The landing page links both pages in the footer "Legal" column and shows a consent line above the calibrate button referencing Art. 11 explicit consent. **Do not deploy without these three pieces.**
 
 ## Retention (SPEC §10.3)
 
