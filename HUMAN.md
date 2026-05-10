@@ -114,6 +114,25 @@ sudo nginx -T | grep -A2 set_real_ip_from | head
 
 ## Resolved
 
+### Q-01..Q-05 · VPS probe (provider/OS/nginx/Rust/certbot) · raised 2026-05-09 · resolved 2026-05-10
+
+**Asked:** dimensões de hardware, layout nginx, porta Rust, domínio existente, certbot.
+**Answer (probe via SSH read-only):** Ubuntu 24.04 LTS Noble, Python 3.12, 3.8 GB RAM, 1 vCPU. nginx 1.24 com `appnda` único site (dormente). Rust em :3000 servido por Docker direto na :80, hostname `appnda.com`. certbot ausente.
+**Followed-up in:** SPRINT.md §3, DIARY 2026-05-10, plan file.
+
+### Q-09 · appnda nginx vhost (precisava resolver pra ligar nginx) · raised 2026-05-10 · resolved 2026-05-10
+
+**Asked:** appnda nginx site dormente, mas `listen 80 default_server` choca com Docker. Manter, editar, ou remover symlink?
+**Answer (from human):** "aplica a B" — remove symlink. Projeto appnda parado por ≥1 mês.
+**Followed-up in:** `rm /etc/nginx/sites-enabled/appnda` no VPS, comentário em `nginx.conf` registrando o motivo.
+
+### Q-10 · DNS records órfãos no Cloudflare · raised 2026-05-10 · resolved 2026-05-10
+
+**Asked:** 3 A records pra `voxprobabilis.com` em vez de 1 — `89.116.73.118` (nosso VPS), `44.230.85.241` e `52.33.207.7` (AWS Oregon, = Linkly). CNAME wildcard `* → uixie.porkbun.com` (parking Porkbun).
+**Why blocking:** Cloudflare round-robin entre os 3 IPs. POST multipart caía nos AWS → Linkly redirecionava pra `voxprobabilis-com.l.ink`. GET passava OK porque os AWS retornavam parking page com cache, não interceptavam.
+**Answer (from human):** deletei AWS A records + CNAME wildcard.
+**Followed-up in:** smoke §10 6/7/8 passaram após DNS cleanup. Lie sample landed em `OVER_CONTROLLED_TENSE`.
+
 ### Q-00 · Liveness mode A/B/C · raised 2026-05-09 · resolved 2026-05-09
 
 **Asked:** DEPLOY §4 — TTS_DISCOVERY achou microtremor ~zero em TTS, real second capability, mas n=3-vs-n=3 fino. Pick: A (off) / B (boolean) / C (full).
