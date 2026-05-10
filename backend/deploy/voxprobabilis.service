@@ -1,6 +1,7 @@
 [Unit]
 Description=Vox Probabilis backend (FastAPI + uvicorn)
 Documentation=https://doi.org/10.5281/zenodo.19478167
+Documentation=https://voxprobabilis.com
 After=network.target
 # Do NOT set After=nginx.service — nginx is optional (reverse proxy only).
 # The service must boot even if nginx is down.
@@ -15,17 +16,30 @@ WorkingDirectory=/opt/voxprobabilis/backend
 Environment="PATH=/opt/voxprobabilis/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 EnvironmentFile=/opt/voxprobabilis/.env
 
-# uvicorn binds to 127.0.0.1 only — nginx terminates TLS on :443 and
-# proxies to us. 2 workers is plenty for v0.1: analysis is ~300ms
-# CPU-bound per request, and our free-tier cap keeps offered-load low.
+# uvicorn binds to 127.0.0.1:8002 (DEPLOY.md §6.1) — nginx terminates
+# TLS on :443 and proxies to us. 2 workers is plenty for v0.1: analysis
+# is ~300ms CPU-bound per request, and our free-tier cap keeps
+# offered-load low. --no-server-header suppresses uvicorn's
+# "Server: uvicorn" advertisement (DEPLOY §14 hardening).
 ExecStart=/opt/voxprobabilis/venv/bin/uvicorn app.main:app \
-    --host 127.0.0.1 --port 8000 \
+    --host 127.0.0.1 --port 8002 \
     --workers 2 \
+    --log-level info \
+    --access-log \
+    --no-server-header \
     --proxy-headers \
     --forwarded-allow-ips 127.0.0.1
 
 Restart=on-failure
 RestartSec=5s
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+# --- Resource caps -------------------------------------------------------
+# 1 GB suits a 2 GB VPS comfortably; tune down if the box is smaller
+# (see HUMAN.md Q-01). 200% CPU = up to 2 cores.
+MemoryMax=1G
+CPUQuota=200%
 
 # --- Hardening -----------------------------------------------------------
 # Fresh private /tmp per service (defense-in-depth: the audio loader
@@ -36,10 +50,22 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 ProtectKernelTunables=true
+ProtectKernelModules=true
 ProtectControlGroups=true
 RestrictSUIDSGID=true
-# The service writes to the DB and expects a writable /tmp for pydub.
-ReadWritePaths=/var/lib/voxprobabilis /tmp
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+
+# The service writes to the DB, an optional access-log dir, and expects
+# a writable /tmp for pydub (cleaned up in audio loader's finally block).
+ReadWritePaths=/var/lib/voxprobabilis /var/log/voxprobabilis /tmp
+
+# --- Logging -------------------------------------------------------------
+# journald default; query with `journalctl -u voxprobabilis -f`.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=voxprobabilis
 
 [Install]
 WantedBy=multi-user.target
