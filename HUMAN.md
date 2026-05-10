@@ -86,6 +86,22 @@ sudo nginx -T | grep -A2 set_real_ip_from | head
 
 ---
 
+### Q-08 · Mantive wiring inline em `index.html` em vez de extrair pra `static/wire.js` · raised 2026-05-09 · context: VOX-DEPLOY-A
+
+**Why I'm asking:** DEPLOY.md §5.2 manda *literalmente* "implement this patch in a separate file `static/wire.js`". Mas o `index.html` que você já tinha tem `apiCalibrate`/`apiAnalyze` inline e o dispatcher `data-action`. A implementação que o DEPLOY descreve (`runStep(N)` + `runAnalysis()`) **não existe** — DEPLOY foi escrito antes do HTML maturar.
+
+**Que fiz:** flipei `VOX_USE_MOCK = false` e deletei o bloco `window.VOX_MOCK` (~108 linhas). Resultado: backend real bate em `/api/calibrate` e `/api/analyze`, comportamento idêntico ao spec, diff mínimo.
+
+**Tradeoff:**
+- (a) Inline (atual): 1 arquivo HTML, fácil de inspecionar; cache-bust ao editar HTML invalida JS junto.
+- (b) Extrair pra `static/wire.js` per literal §5.2: cache separado pro JS (HTML pode mudar sem invalidar JS no Cloudflare CDN), mas exige mover ~150 linhas (state, $/$$, go, painters, dispatcher) ou só a parte de `apiCalibrate`/`apiAnalyze` (split artificial).
+
+**Tentative (já aplicado):** (a). Ganho de cache-isolation é teórico (HTML é dominado pelos painters, não pelo wiring; mudança no wiring é rara).
+
+**Ask:** OK manter inline ou você quer §5.2 ao pé da letra? Se quiser (b), me diz e extraio.
+
+---
+
 ### Q-07 · Smoke fixtures `audios_claude/{ai_truth,ai_uncertain,ai_lie}.wav` · raised 2026-05-09 · context: VOX-DEPLOY-A
 
 **Why I'm asking:** DEPLOY.md §1 cita esses três WAVs como fixtures de regressão. Não achei em `backend/tests/` nem `landing_page/samples/`. Decide se smoke pós-deploy (§10 curl 6 e 7) usa eles ou usa as suas opus locais.

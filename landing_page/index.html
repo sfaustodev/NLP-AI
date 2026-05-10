@@ -1151,10 +1151,10 @@
 <script>
 /* ------------------------------------------------------------------
  * Vox Probabilis — frontend v0.1
- * Mock backend lives at window.VOX_MOCK; when the real FastAPI app
- * ships, flip VOX_USE_MOCK to false and fetch() calls hit /api/*.
+ * Real FastAPI backend on /api/* (DEPLOY.md §5). Set VOX_USE_MOCK=true
+ * locally if you need to demo the UI without the backend running.
  * ------------------------------------------------------------------ */
-const VOX_USE_MOCK = true;
+const VOX_USE_MOCK = false;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /* ---------- state ---------- */
@@ -1444,116 +1444,6 @@ function paintReveal() {
   group.appendChild(text);
   g.appendChild(group);
 }
-
-/* ------------------------------------------------------------------
- * MOCK BACKEND — matches §6 of the SPEC exactly.
- * ------------------------------------------------------------------ */
-window.VOX_MOCK = (() => {
-  const GLOBAL = {
-    jitter_local: 0.0182,
-    mfcc_delta_var_mean: 0.0471,
-    spectral_flux_mean: 0.1284,
-    microtremor_envelope: 0.0034,
-  };
-
-  let mockBaseline = null;
-  const pct   = (sample, baseline) => ((sample - baseline) / baseline) * 100;
-  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-  const tanh  = x => Math.tanh(x);
-  const rand  = (lo, hi) => lo + Math.random() * (hi - lo);
-  const sleep = ms => new Promise(res => setTimeout(res, ms));
-
-  function deriveBaseline() {
-    return {
-      jitter_local:         rand(0.012, 0.024),
-      mfcc_delta_var_mean:  rand(0.035, 0.075),
-      spectral_flux_mean:   rand(0.100, 0.160),
-      microtremor_envelope: rand(0.0025, 0.0042),
-    };
-  }
-
-  function simulate(ritual) {
-    const base = mockBaseline || GLOBAL;
-    const profiles = {
-      uncertain: { jitter: 0.95, mfcc: 0.90, flux: 0.92, tremor: 1.20 },
-      lie:       { jitter: 0.72, mfcc: 0.62, flux: 0.55, tremor: 1.55 },
-      ai_bonus:  { jitter: 0.35, mfcc: 0.30, flux: 0.28, tremor: 0.20 },
-      free:      { jitter: 1.02, mfcc: 1.01, flux: 0.98, tremor: 1.05 },
-    };
-    const p = profiles[ritual] || profiles.free;
-
-    const features = {
-      jitter_local:         +(base.jitter_local         * (p.jitter + rand(-0.05, 0.05))).toFixed(5),
-      mfcc_delta_var_mean:  +(base.mfcc_delta_var_mean  * (p.mfcc   + rand(-0.05, 0.05))).toFixed(5),
-      spectral_flux_mean:   +(base.spectral_flux_mean   * (p.flux   + rand(-0.05, 0.05))).toFixed(5),
-      microtremor_envelope: +(base.microtremor_envelope * (p.tremor + rand(-0.08, 0.08))).toFixed(5),
-    };
-
-    const deltas = {
-      jitter_local_pct:          +clamp(pct(features.jitter_local,         base.jitter_local),         -100, 500).toFixed(2),
-      mfcc_delta_var_pct:        +clamp(pct(features.mfcc_delta_var_mean,  base.mfcc_delta_var_mean),  -100, 500).toFixed(2),
-      spectral_flux_pct:         +clamp(pct(features.spectral_flux_mean,   base.spectral_flux_mean),   -100, 500).toFixed(2),
-      microtremor_envelope_pct:  +clamp(pct(features.microtremor_envelope, base.microtremor_envelope), -100, 500).toFixed(2),
-    };
-
-    const voluntary   = (deltas.jitter_local_pct + deltas.mfcc_delta_var_pct + deltas.spectral_flux_pct) / 3 / 100;
-    const naturalness = tanh(voluntary * 2);
-    const stress      = tanh((deltas.microtremor_envelope_pct / 100) * 2);
-
-    let quadrant;
-    if (Math.abs(naturalness) < 0.05 && Math.abs(stress) < 0.05) quadrant = 'ORIGIN';
-    else if (naturalness < 0 && stress > 0) quadrant = 'OVER_CONTROLLED_TENSE';
-    else if (naturalness > 0 && stress > 0) quadrant = 'NATURAL_STRESSED';
-    else if (naturalness < 0 && stress < 0) quadrant = 'OVER_CONTROLLED_CALM';
-    else                                     quadrant = 'NATURAL_CALM';
-
-    const baseline_source = mockBaseline ? 'session' : 'global';
-    const confidence = mockBaseline ? 'medium' : 'low';
-
-    return {
-      features,
-      deltas,
-      projection: {
-        naturalness:        +naturalness.toFixed(3),
-        involuntary_stress: +stress.toFixed(3),
-        quadrant,
-      },
-      confidence,
-      confidence_reason: mockBaseline
-        ? 'Per-session baseline from calibration used.'
-        : 'Global baseline (n=3) used — calibrate for a personal baseline.',
-      baseline_source,
-      sample_duration_s:  +rand(4, 6).toFixed(2),
-      voiced_frame_ratio: +rand(0.65, 0.92).toFixed(2),
-      methodology_note:
-        'Features are computed per the methods described in DOI 10.5281/zenodo.19396809. ' +
-        'The deception signature was validated on n=3 recordings from a single speaker. ' +
-        'Generalisation to your voice is hypothesised but not proven.',
-      quota: {
-        remaining_today: Math.max(0, 3 - Object.keys(state.results).filter(k => k === 'free' || k === 'ai_bonus').length),
-        resets_at: new Date(Date.now() + 86400000).toISOString(),
-      },
-    };
-  }
-
-  return {
-    async calibrate(file) {
-      await sleep(600);
-      mockBaseline = deriveBaseline();
-      return {
-        session_id: 'mock_' + Math.random().toString(36).slice(2, 10),
-        baseline_established: true,
-        baseline: mockBaseline,
-        sample_duration_s: +rand(4, 6).toFixed(2),
-        voiced_frame_ratio: +rand(0.7, 0.9).toFixed(2),
-      };
-    },
-    async analyze(file, ritual_step) {
-      await sleep(550);
-      return simulate(ritual_step || 'free');
-    },
-  };
-})();
 
 /* ---------- init ---------- */
 go(1);
