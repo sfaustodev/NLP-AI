@@ -33,6 +33,7 @@ from . import __version__
 from .api import analyze as analyze_api
 from .api import calibrate as calibrate_api
 from .api import health as health_api
+from .api import metrics as metrics_api
 from .api import session as session_api
 from .config import settings
 from .db import apply_migrations
@@ -147,6 +148,7 @@ def create_app() -> FastAPI:
     app.include_router(session_api.router)
     app.include_router(calibrate_api.router)
     app.include_router(analyze_api.router)
+    app.include_router(metrics_api.router)
 
     _mount_static(app)
 

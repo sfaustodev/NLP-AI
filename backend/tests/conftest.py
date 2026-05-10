@@ -59,8 +59,9 @@ def client(tmp_db: Path):
     from app.api import calibrate as _calibrate
     from app.api import session as _session_api
     from app.api import health as _health
+    from app.api import metrics as _metrics
     from app import main as _main
-    for mod in (_db, _sessions, _rate, _analyze, _calibrate, _session_api, _health, _main):
+    for mod in (_db, _sessions, _rate, _analyze, _calibrate, _session_api, _health, _metrics, _main):
         importlib.reload(mod)
 
     with TestClient(_main.app) as c:
