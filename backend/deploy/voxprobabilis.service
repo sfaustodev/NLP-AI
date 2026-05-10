@@ -6,6 +6,11 @@ After=network.target
 # Do NOT set After=nginx.service — nginx is optional (reverse proxy only).
 # The service must boot even if nginx is down.
 
+# Systemd's start-rate limiter — these keys live in [Unit], not [Service]
+# (a misplaced copy in [Service] is silently ignored, masking the limit).
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
 [Service]
 Type=simple
 User=vox
@@ -32,8 +37,6 @@ ExecStart=/opt/voxprobabilis/venv/bin/uvicorn app.main:app \
 
 Restart=on-failure
 RestartSec=5s
-StartLimitIntervalSec=60s
-StartLimitBurst=3
 
 # --- Resource caps -------------------------------------------------------
 # 1 GB suits a 2 GB VPS comfortably; tune down if the box is smaller
