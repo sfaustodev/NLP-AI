@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-05-10 — Phase E close · ticket fechado
+
+**Tickets touched:** `VOX-DEPLOY-A` → Done
+
+**Done:**
+- Juan confirmou "testei tudo passou" — browser §10.1 OK, ritual truth/uncertain/lie com 3 pontos nos quadrants certos.
+- Cloudflare Web Analytics ativado (DoD §15 #11).
+- Origin Cert backed up no `.env` + `backend/secrets/` (DoD §15 #17).
+- JIRA.md movido pra Done com data + confirmação verbatim.
+
+**In flight:** —
+
+**Blocked:** —
+
+**Next session should start with:** monitoring DEPLOY §16 first 48h:
+- Hour 0–6: `journalctl -u voxprobabilis -f` enquanto compartilha URL com 1–2 testers.
+- Hour 6–24: Cloudflare Analytics tráfego, disco não cresce.
+- Hour 24–48: cron diário backup roda, day_bucket rollover OK.
+- 48h: anúncio mais amplo (Reddit, X, LinkedIn, Zenodo paper).
+
+**Open future work** (não bloqueante):
+- HUMAN.md Q-06 Porkbun email forwarding `contact@voxprobabilis.com` (recomendado pra LGPD vir verdadeira).
+- HUMAN.md Q-07 fixtures `audios_claude/*.wav` regression — usar `landing_page/samples/{truth,doubt,lie}.opus` que já existem foi suficiente pro smoke.
+- HUMAN.md Q-08 wire.js extraction (cosmetic).
+- v0.2 deferrals em DEPLOY.md Appendix A.
+
+---
+
 ## 2026-05-10 — Phase B/C/D · live deploy
 
 **Tickets touched:** `VOX-DEPLOY-A`
