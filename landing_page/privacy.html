@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Privacy Policy — Vox Probabilis</title>
+<meta name="description" content="What we collect, what we don't, and how we comply with LGPD." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0A0808; --ink-2: #120E0D; --line: #2A211F;
+    --bone: #E8DFD0; --bone-dim: #BFB4A4; --muted: #7A6F6A;
+    --crimson: #B2231F;
+    --serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% 12%, rgba(178,35,31,0.05), transparent 60%),
+      var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--crimson); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 60px 28px 120px; }
+  .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--bone-dim); font-style: italic; font-family: var(--serif); font-size: 18px; margin: 0 0 36px; }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: 22px; margin: 36px 0 8px; letter-spacing: 0.005em; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 36px; font-family: var(--mono); }
+  .disclaimer { border-left: 2px solid var(--crimson); padding: 12px 16px; background: rgba(178,35,31,0.05); font-style: italic; font-family: var(--serif); font-size: 17px; line-height: 1.55; margin-top: 32px; }
+  .back { display: inline-block; margin-top: 48px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--bone); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">Vox Probabilis</div>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Last updated: 2026-04-19</p>
+
+  <h2>1. Who we are</h2>
+  <p>Vox Probabilis is a research project by Juan Fausto and Claude (Anthropic), open-sourced under MIT license. Contact: <a href="mailto:contact@voxprobabilis.com">contact@voxprobabilis.com</a></p>
+
+  <h2>2. What we collect</h2>
+  <ul>
+    <li>A randomly generated session ID stored in a cookie (HttpOnly, SameSite=Lax)</li>
+    <li>A SHA-256 hash of your IP address (truncated to 16 chars) for rate limiting</li>
+    <li>Four spectral features extracted from your voice samples: jitter, MFCC delta variance, spectral flux, microtremor envelope</li>
+    <li>Timestamps of analysis requests</li>
+    <li>The quadrant label assigned by the analyzer</li>
+  </ul>
+
+  <h2>3. What we DO NOT collect</h2>
+  <ul>
+    <li>Your raw audio. Audio files exist briefly in server memory and a temporary file during format conversion (less than 200 milliseconds), then are permanently deleted. We do not retain audio under any circumstances.</li>
+    <li>Your name, email, address, or any direct identifier</li>
+    <li>Cookies for advertising or third-party tracking</li>
+    <li>Browser fingerprints</li>
+  </ul>
+
+  <h2>4. Why we collect what we collect</h2>
+  <ul>
+    <li>Session cookie: to remember your baseline calibration and daily quota</li>
+    <li>IP hash: to enforce the free quota of 3 analyses per day</li>
+    <li>Feature values: to compute the analysis you requested</li>
+  </ul>
+
+  <h2>5. Optional: Research dataset (opt-in)</h2>
+  <p>If you check the "Contribute to v2 dataset" box, the four feature values from a single analysis are saved without any link to your session, IP, or identity. These anonymous numerical vectors may be used in a future academic publication. You can stop opting in at any time. We cannot delete past anonymous contributions because they cannot be linked back to you — that is the point of anonymization.</p>
+
+  <h2>6. Data retention</h2>
+  <ul>
+    <li>Session data: 60 days from your last visit, then deleted</li>
+    <li>Analysis records: 90 days, then deleted</li>
+    <li>Anonymous opt-in feature vectors: indefinite (research data)</li>
+  </ul>
+
+  <h2>7. Your rights under LGPD</h2>
+  <p>You may request:</p>
+  <ul>
+    <li>Access to data we hold about your session</li>
+    <li>Deletion of your session data (this is automatic if you stop using the service for 60 days)</li>
+    <li>Confirmation that we process your data</li>
+    <li>Information on how your data is used</li>
+  </ul>
+  <p>Contact: <a href="mailto:contact@voxprobabilis.com">contact@voxprobabilis.com</a> — we respond within 15 days.</p>
+
+  <h2>8. Lawful basis</h2>
+  <p>Processing of voice data (sensitive personal data under LGPD Art. 11) is based on your specific and explicit consent, given by uploading audio to the analyzer.</p>
+
+  <h2>9. Children</h2>
+  <p>This service is not directed at children under 13. We do not knowingly collect data from children.</p>
+
+  <h2>10. Changes</h2>
+  <p>We will post any changes here with an updated date. We will not silently expand what we collect.</p>
+
+  <h2>11. Disclaimer about findings</h2>
+  <p class="disclaimer">Vox Probabilis is a research instrument, not a forensic or medical device. Outputs are scientific measurements with stated uncertainty. Do not use them to make legal, employment, relational, or medical decisions about yourself or others.</p>
+
+  <a class="back" href="/">← back to vox probabilis</a>
+</div>
+</body>
+</html>

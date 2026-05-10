@@ -151,3 +151,21 @@ def test_health_endpoint(client) -> None:
 def test_version_header_present(client) -> None:
     r = client.get("/api/session")
     assert r.headers.get("X-Vox-Version")
+
+
+def test_privacy_page_served(client) -> None:
+    """DEPLOY.md §9 — /privacy must serve the LGPD policy as HTML."""
+    r = client.get("/privacy")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/html")
+    assert "Privacy Policy" in r.text
+    assert "LGPD" in r.text
+
+
+def test_terms_page_served(client) -> None:
+    """DEPLOY.md §9 — /terms must serve the ToS as HTML."""
+    r = client.get("/terms")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/html")
+    assert "Terms of Service" in r.text
+    assert "Brazilian law" in r.text

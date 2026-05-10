@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Terms of Service — Vox Probabilis</title>
+<meta name="description" content="What this service is, what it isn't, and the limits of liability." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0A0808; --ink-2: #120E0D; --line: #2A211F;
+    --bone: #E8DFD0; --bone-dim: #BFB4A4; --muted: #7A6F6A;
+    --crimson: #B2231F;
+    --serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% 12%, rgba(178,35,31,0.05), transparent 60%),
+      var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--crimson); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 60px 28px 120px; }
+  .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--bone-dim); font-style: italic; font-family: var(--serif); font-size: 18px; margin: 0 0 36px; }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: 22px; margin: 36px 0 8px; letter-spacing: 0.005em; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 36px; font-family: var(--mono); }
+  .disclaimer { border-left: 2px solid var(--crimson); padding: 12px 16px; background: rgba(178,35,31,0.05); font-style: italic; font-family: var(--serif); font-size: 17px; line-height: 1.55; margin-top: 32px; }
+  .back { display: inline-block; margin-top: 48px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--bone); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb">Vox Probabilis</div>
+  <h1>Terms of Service</h1>
+  <p class="meta">Last updated: 2026-04-19</p>
+
+  <h2>1. Service definition</h2>
+  <p>Vox Probabilis is a free research tool that analyzes the spectral characteristics of voice samples and reports four features and a quadrant label, based on methods described in <a href="https://doi.org/10.5281/zenodo.19396809" target="_blank" rel="noreferrer noopener">doi.org/10.5281/zenodo.19396809</a>.</p>
+
+  <h2>2. What this service is NOT</h2>
+  <ul>
+    <li>A lie detector</li>
+    <li>A polygraph</li>
+    <li>A medical device</li>
+    <li>A forensic device</li>
+    <li>A diagnostic tool of any kind</li>
+  </ul>
+  <p>The service measures spectral properties of an audio signal. It does not determine truth, deception, intent, sincerity, or mental state. The mapping between spectral patterns and human behavior is hypothesized and was validated on three (3) recordings from one (1) speaker. Generalization is not proven.</p>
+
+  <h2>3. Permitted use</h2>
+  <p>Personal curiosity, education, research, scientific replication, art, journalism. Free of charge.</p>
+
+  <h2>4. Prohibited use</h2>
+  <ul>
+    <li>Making decisions about employment, hiring, firing, or promotion</li>
+    <li>Use in interrogation, criminal investigation, or judicial proceedings</li>
+    <li>Surveillance of any individual without their explicit consent</li>
+    <li>Medical or psychiatric diagnosis or treatment</li>
+    <li>Any decision affecting another person's rights, freedom, or wellbeing</li>
+    <li>Any commercial product that resells our outputs as detection results</li>
+  </ul>
+  <p>We reserve the right to block any user whose usage suggests prohibited use.</p>
+
+  <h2>5. No warranty</h2>
+  <p class="disclaimer">The service is provided "as is" with no warranty of any kind. The research underlying it is preliminary and not peer-reviewed. Outputs may be wrong. We are not liable for any decision made on the basis of our outputs.</p>
+
+  <h2>6. Open source</h2>
+  <p>The full source code is available at <a href="https://github.com/sfaustodev/NLP-AI" target="_blank" rel="noreferrer noopener">github.com/sfaustodev/NLP-AI</a> under the MIT License. You may fork, study, and self-host. We provide no guarantee of uptime for this hosted instance.</p>
+
+  <h2>7. Limitation of liability</h2>
+  <p>To the extent permitted by Brazilian law, our maximum aggregate liability for any claim related to the service is BRL 100. The service is free, non-commercial, and operated as a research project.</p>
+
+  <h2>8. Governing law</h2>
+  <p>These terms are governed by Brazilian law. Any dispute will be resolved in the courts of Porto Seguro, Bahia.</p>
+
+  <h2>9. Changes</h2>
+  <p>We may update these terms. Continued use after changes means you accept the new terms.</p>
+
+  <h2>10. Contact</h2>
+  <p><a href="mailto:contact@voxprobabilis.com">contact@voxprobabilis.com</a></p>
+
+  <a class="back" href="/">← back to vox probabilis</a>
+</div>
+</body>
+</html>

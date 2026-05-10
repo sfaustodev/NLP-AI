@@ -102,6 +102,8 @@ def _mount_static(app: FastAPI) -> None:
     """
     static_root: Path = settings.static_dir
     index_path = static_root / "index.html"
+    privacy_path = static_root / "privacy.html"
+    terms_path = static_root / "terms.html"
 
     @app.get("/", include_in_schema=False)
     def _index():
@@ -117,6 +119,18 @@ def _mount_static(app: FastAPI) -> None:
                 },
             },
         )
+
+    @app.get("/privacy", include_in_schema=False)
+    def _privacy():
+        if privacy_path.is_file():
+            return FileResponse(privacy_path)
+        return JSONResponse(status_code=404, content={"error": {"code": "STATIC_MISSING", "message": "privacy.html not found", "hint": None}})
+
+    @app.get("/terms", include_in_schema=False)
+    def _terms():
+        if terms_path.is_file():
+            return FileResponse(terms_path)
+        return JSONResponse(status_code=404, content={"error": {"code": "STATIC_MISSING", "message": "terms.html not found", "hint": None}})
 
     if static_root.is_dir():
         app.mount(
