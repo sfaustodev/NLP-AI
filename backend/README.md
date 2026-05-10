@@ -94,7 +94,7 @@ Walk-through in DEPLOY.md §3:
 ```bash
 # System deps (one-time)
 sudo apt update
-sudo apt install -y python3.11 python3.11-venv ffmpeg libsndfile1 sqlite3 git nginx ufw fail2ban
+sudo apt install -y python3.12 python3.12-venv ffmpeg libsndfile1 sqlite3 git nginx ufw fail2ban
 
 # Service user + dirs
 sudo useradd -r -s /bin/false vox || true
@@ -103,7 +103,7 @@ sudo chown -R vox:vox /var/lib/voxprobabilis /var/log/voxprobabilis
 
 # Code + venv
 sudo -u vox git clone https://github.com/sfaustodev/NLP-AI.git /opt/voxprobabilis
-sudo -u vox python3.11 -m venv /opt/voxprobabilis/venv
+sudo -u vox python3.12 -m venv /opt/voxprobabilis/venv
 sudo -u vox /opt/voxprobabilis/venv/bin/pip install -U pip
 sudo -u vox /opt/voxprobabilis/venv/bin/pip install -r /opt/voxprobabilis/backend/requirements.txt
 
