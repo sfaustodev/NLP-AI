@@ -105,7 +105,7 @@ def _mount_static(app: FastAPI) -> None:
     privacy_path = static_root / "privacy.html"
     terms_path = static_root / "terms.html"
 
-    @app.get("/", include_in_schema=False)
+    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
     def _index():
         if index_path.is_file():
             return FileResponse(index_path)
@@ -120,13 +120,13 @@ def _mount_static(app: FastAPI) -> None:
             },
         )
 
-    @app.get("/privacy", include_in_schema=False)
+    @app.api_route("/privacy", methods=["GET", "HEAD"], include_in_schema=False)
     def _privacy():
         if privacy_path.is_file():
             return FileResponse(privacy_path)
         return JSONResponse(status_code=404, content={"error": {"code": "STATIC_MISSING", "message": "privacy.html not found", "hint": None}})
 
-    @app.get("/terms", include_in_schema=False)
+    @app.api_route("/terms", methods=["GET", "HEAD"], include_in_schema=False)
     def _terms():
         if terms_path.is_file():
             return FileResponse(terms_path)
