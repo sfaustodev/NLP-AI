@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Termos de Uso — Vox Probabilis Coach</title>
+<meta name="description" content="Termos de uso do Vox Probabilis Coach — ferramenta de preparação pré-audiência para advogados em exercício." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0A0808; --ink-2: #120E0D; --line: #2A211F;
+    --bone: #E8DFD0; --bone-dim: #BFB4A4; --muted: #7A6F6A;
+    --crimson: #B2231F;
+    --serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% 12%, rgba(178,35,31,0.05), transparent 60%),
+      var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--crimson); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 60px 28px 120px; }
+  .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .crumb a { text-decoration: none; }
+  .crumb a:hover { color: var(--bone); }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--bone-dim); font-style: italic; font-family: var(--serif); font-size: 18px; margin: 0 0 30px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 36px; font-family: var(--mono); }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: 22px; margin: 38px 0 8px; letter-spacing: 0.005em; color: var(--bone); }
+  h2 .art { color: var(--crimson); font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; display: block; margin-bottom: 4px; text-transform: uppercase; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .liability { border-left: 2px solid var(--crimson); padding: 12px 16px; background: rgba(178,35,31,0.05); font-family: var(--serif); font-size: 17px; line-height: 1.55; margin: 12px 0; }
+  .back { display: inline-block; margin-top: 56px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--bone); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/">Vox Probabilis</a> · Coach</div>
+  <h1>Termos de Uso</h1>
+  <p class="sub">Ferramenta interativa de preparação pré-audiência para advogados em exercício.</p>
+  <p class="meta">Versão 2026-05-16 · jurisdição: Brasil</p>
+
+  <h2 id="art-1"><span class="art">Art. 1º</span>Definição</h2>
+  <p>Coach é ferramenta interativa de preparação. Não é dispositivo forense, não é polígrafo, não é evidência judicial.</p>
+
+  <h2 id="art-2"><span class="art">Art. 2º</span>Finalidade exclusiva</h2>
+  <p>Uso restrito a sessões 1-on-1 entre advogado(a) e cliente(s) ou testemunha(s) da causa em que atua. Vedado o uso em sessões com partes contrárias, com testemunhas arroladas por outras partes sem o conhecimento delas, ou em qualquer contexto que viole o sigilo profissional do advogado.</p>
+
+  <h2 id="art-3"><span class="art">Art. 3º</span>Vedação ao uso processual</h2>
+  <p>É absolutamente vedado anexar relatórios produzidos pelo Coach a peças processuais, ou submetê-los como evidência em qualquer foro. Coach é ferramenta de preparação privada; seus outputs são para uso interno do escritório.</p>
+
+  <h2 id="art-4"><span class="art">Art. 4º</span>Consentimento do cliente</h2>
+  <p>O advogado declara, ao iniciar uma sessão, que obteve consentimento informado do cliente para a análise prosódica. Modelo de consentimento fornecido em <code>/coach/consent-template</code> (PDF para download e impressão).</p>
+
+  <h2 id="art-5"><span class="art">Art. 5º</span>LGPD</h2>
+  <p>Voz é dado pessoal sensível. Coach processa o áudio em memória, armazena apenas features extraídas (números) nos planos Tier 2+ que oferecem retenção, descarta o áudio bruto em todos os planos dentro de 60 segundos do processamento, e permite ao advogado solicitar exclusão da sessão a qualquer momento. Base legal: consentimento explícito do titular do dado (cliente/testemunha) intermediado pelo advogado.</p>
+
+  <h2 id="art-6"><span class="art">Art. 6º</span>Sigilo profissional</h2>
+  <p>O Coach não armazena conteúdo semântico das respostas. Apenas features prosódicas (4 números por resposta) e timestamps. As perguntas do advogado, quando fornecidas como texto, são armazenadas para o relatório — o advogado é responsável por não incluir matéria coberta por sigilo nesse campo.</p>
+
+  <h2 id="art-7"><span class="art">Art. 7º</span>Limitação de responsabilidade</h2>
+  <p class="liability">A responsabilidade civil máxima agregada do Operador, decorrente de qualquer reclamação relacionada ao serviço, fica limitada ao <strong>maior</strong> dos seguintes valores: <strong>(i)</strong> o total efetivamente pago pelo Usuário ao Operador nos 12 (doze) meses anteriores ao evento que ensejar a reclamação; ou <strong>(ii)</strong> R$ 1.000,00 (mil reais). Esta limitação não se aplica em caso de dolo ou culpa grave comprovada do Operador.</p>
+
+  <h2 id="art-8"><span class="art">Art. 8º</span>Foro</h2>
+  <p>Foro da Comarca de Porto Seguro, Bahia, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
+
+  <a class="back" href="/terms">← outros termos de uso</a>
+  &nbsp;&nbsp;
+  <a class="back" href="/">voltar ao site →</a>
+</div>
+</body>
+</html>
