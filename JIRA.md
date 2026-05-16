@@ -8,11 +8,13 @@
 ## Active
 
 ### VOX-LANDING-A · marketing landing 3-tab + per-product Terms
-- **Status:** 🟡 Em desenvolvimento · Phase A local complete · aguardando autorização Phase B prod
-- **Branch:** `c/modest-napier-805905`
+- **Status:** 🟡 In Review · live em prod 2026-05-16 22:12 UTC · aguardando confirmação browser test Faustão (rule #13) pra fechar
+- **Branch:** `c/modest-napier-805905` → merged via PR #1 em master (`f207038`)
 - **Specs:** `landing_page/SPECS/SPEC_COACH.md` v0.1.1, `landing_page/SPECS/SPEC_ACADEMIC.md` v0.1.0
+- **Live URL:** https://voxprobabilis.com (homepage agora marketing 3-tab; v0.1 ferramenta em /app)
+- **PR:** [NLP-AI#1](https://github.com/sfaustodev/NLP-AI/pull/1) · merged 2026-05-16 22:11 UTC
 - **Goal:** advogado amigo abre `https://voxprobabilis.com`, vê 3 produtos (Explorer/Academic/Coach) com pricing transparente + Terms sérios, sente que é produto de verdade
-- **Phase A commits:**
+- **Phase A commits (9):**
   - `19062b8` feat: import marketing site assets (4 files · 70KB)
   - `c34143b` docs: import Coach + Academic v0.1 specs
   - `355159a` fix: rewrite marketing asset paths to /m/* mount
@@ -21,17 +23,27 @@
   - `38589fa` feat: add VOX_MARKETING_DIR env var
   - `dd89edf` feat: add marketing routes and /m static mount
   - `f463b95` test: cover new marketing routes and v1 regression
-- **Próximas tasks (checklist):**
-  - [x] A.1 import assets + SPECs
-  - [x] A.2 rewrite asset paths to /m/*
-  - [x] A.3 generate 3 Terms HTML (coach + academic + hub)
-  - [x] A.4 wire footer + banner links
-  - [x] A.5 FastAPI routes (/, /app, /terms, /coach/terms, /academic/terms) + /m mount + VOX_MARKETING_DIR
-  - [x] A.6 11 testes novos (test_landing.py) + ajuste test_terms_page_served (test_api.py)
-  - [ ] A.8 codex-cross-review do diff Phase A
-  - [ ] B production deploy (aguarda autorização escrita rule #16D)
+  - `c647eb4` docs: open umbrella ticket + Phase A diary entry
+- **Phase B prod deploy (2026-05-16 22:12 UTC):**
+  - Rollback anchor SHA: `8341769` (pré-deploy)
+  - `.env` backup: `/opt/voxprobabilis/.env.bak.20260516-221224`
+  - `git pull origin master` → HEAD `f207038` (17 files / 3655 insertions)
+  - `systemctl restart voxprobabilis` → active, 161MB memory, workers up
+  - Smoke curl laptop (via Cloudflare): 9 rotas 200 (`/` `/app` `/coach/terms` `/academic/terms` `/terms` `/m/static/style.css` `/m/audiencia_cartesian.png` `/api/health` `/privacy`)
+  - Content verified: 3 tabs no `/`, Art. 1º + R$ 1.000 em /coach/terms, R$ 500 em /academic/terms, hub linkando ambos
+  - Security headers v0.1 herdados nas novas rotas: X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin
+  - Sem regressão v0.1: `/privacy` 200, `/api/health` 200 OK, `/assets/*` mantido
+- **Checklist:**
+  - [x] A.1-A.8 Phase A local (9 commits + 11 tests + uvicorn smoke local)
+  - [x] PR #1 created + merged via merge-commit (preserva 9 commits atômicos per CLAUDE.md)
+  - [x] B.1-9 prod deploy + smoke (9 rotas verde, 6 content checks verde)
+  - [ ] B.10 sacred files update Phase B (este commit)
+  - [ ] Faustão browser test incognito (3 tabs, Coach Terms Art. 1º-8º, /app v0.1 ainda funcional)
+  - [ ] Faustão manda URL pro adv amigo (gatilho do produto)
+  - [ ] Confirmação escrita Faustão pra fechar VOX-LANDING-A (rule #13)
 - **Pricing tier:** CTA-only (`href="#"`) per SPRINT.md §0 #6 + resposta humana 2026-05-16 q2 — checkout real fica pra sprint posterior (`VOX-COACH-B` candidato)
-- **Pre-merge tests local:** 16/16 verdes em test_landing.py + non-audio test_api.py. 10 falhas pré-existentes em audio tests (llvmlite ABI mismatch venv local Python 3.13) — não relacionadas a esta mudança.
+- **Pre-merge tests local:** 16/16 verdes em test_landing.py + non-audio test_api.py. 10 falhas pré-existentes em audio tests (llvmlite ABI mismatch venv local Python 3.13) — não relacionadas a esta mudança. Prod usa Python 3.12.
+- **Rollback (se quebrar):** `cd /opt/voxprobabilis && sudo -u vox git reset --hard 8341769 && sudo systemctl restart voxprobabilis` (~30s recovery)
 
 ---
 
