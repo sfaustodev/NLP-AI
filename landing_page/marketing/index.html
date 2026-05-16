@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Vox Probabilis — análise prosódica de voz para pesquisa, educação e preparação jurídica.">
+  <title>Vox Probabilis · Análise prosódica da voz</title>
+  <link rel="stylesheet" href="static/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%230a0a0a' width='100' height='100'/%3E%3Ctext x='50' y='70' font-family='Georgia' font-size='70' font-weight='bold' fill='%23c33a3a' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+  <!-- ============================================================ -->
+  <!-- HEADER -->
+  <!-- ============================================================ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-mark">~</span>VOX&nbsp;PROBABILIS
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Produtos Vox Probabilis">
+        <button class="tab" role="tab" data-tab="v1" aria-selected="true" aria-controls="tab-v1">
+          Explorer
+        </button>
+        <button class="tab" role="tab" data-tab="academic" aria-selected="false" aria-controls="tab-academic">
+          Academic
+        </button>
+        <button class="tab" role="tab" data-tab="coach" aria-selected="false" aria-controls="tab-coach">
+          Coach
+        </button>
+      </nav>
+      <div class="header-right">
+        <button class="lang-toggle" title="Trocar idioma">PT-BR</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1: V1 — EXPLORER -->
+  <!-- ============================================================ -->
+  <section id="tab-v1" class="tab-panel active" role="tabpanel" aria-labelledby="Explorer">
+
+    <div class="hero">
+      <div class="hero-eyebrow">Vox Probabilis · V1</div>
+      <h1 class="hero-title">
+        Sua voz tem <em>assinatura espectral</em>.<br>
+        Veja a sua.
+      </h1>
+      <p class="hero-sub">
+        Análise prosódica baseada no paper original. Calibre uma frase neutra,
+        fale outra qualquer, e veja onde a segunda cai no plano cartesiano
+        de naturalidade e tensão. Ferramenta de exploração para qualquer pessoa.
+      </p>
+      <div class="hero-cta-row">
+        <a href="#tab-v1" class="btn btn-primary">Começar a explorar</a>
+        <a href="https://zenodo.org/records/19396809" class="btn btn-secondary" target="_blank" rel="noopener">
+          Ler o paper original
+        </a>
+      </div>
+      <div class="hero-meta">
+        DOI 10.5281/zenodo.19396809 · Licença MIT · Código aberto
+      </div>
+    </div>
+
+    <div class="section reveal">
+      <h2 class="section-title">Como funciona</h2>
+      <p class="section-sub">
+        Em três passos simples. Sem cadastro pro primeiro teste.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">i.</div>
+          <h3>Calibre</h3>
+          <p>Grave 5–10 segundos lendo uma frase neutra fornecida pelo sistema.
+            Esse áudio estabelece o seu baseline pessoal.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">ii.</div>
+          <h3>Grave</h3>
+          <p>Diga qualquer frase. Pode ser verdadeira, pode ser inventada,
+            pode ser uma piada. O sistema processa em segundos.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">iii.</div>
+          <h3>Veja</h3>
+          <p>O resultado aparece num plano cartesiano comparando sua
+            segunda frase contra o baseline. Salve, compare, explore.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section section-narrow reveal">
+      <h2 class="section-title">O que isso <em class="text-red italic">não</em> é</h2>
+      <p class="section-sub">
+        Honestidade científica primeiro. Vox Probabilis V1 é uma ferramenta de
+        <strong>exploração e curiosidade</strong> &mdash; não um polígrafo, não um detector
+        de mentiras, não um instrumento forense, não um diagnóstico médico. As features
+        prosódicas (jitter, MFCC delta variance, spectral flux, microtremor envelope)
+        revelam padrões de variação na voz. A interpretação desses padrões depende
+        de contexto que o sistema não tem acesso. Use com curiosidade, não com certeza.
+      </p>
+      <div class="hero-cta-row" style="margin-top: 2rem;">
+        <a href="#tab-academic" class="btn btn-ghost">Procura algo para estudo acadêmico? &rarr; Academic</a>
+        <a href="#tab-coach" class="btn btn-ghost">Procura preparação profissional? &rarr; Coach</a>
+      </div>
+    </div>
+
+    <div class="methodology-banner reveal">
+      <div class="methodology-banner-icon">~</div>
+      <p>
+        Vox Probabilis nasce de pesquisa publicada em open access.
+        Toda a matemática está documentada no
+        <a href="https://zenodo.org/records/19396809" target="_blank" rel="noopener">paper original</a>,
+        contextualizada no
+        <a href="https://zenodo.org/records/19478167" target="_blank" rel="noopener">livro <em>AGI~~ Logos Probabilis</em></a>,
+        e implementada no
+        <a href="https://github.com/sfaustodev/NLP-AI" target="_blank" rel="noopener">repositório aberto no GitHub</a>.
+        Nada é caixa-preta &mdash; qualquer número pode ser reproduzido.
+      </p>
+    </div>
+
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 2: ACADEMIC -->
+  <!-- ============================================================ -->
+  <section id="tab-academic" class="tab-panel" role="tabpanel" aria-labelledby="Academic">
+
+    <div class="hero">
+      <div class="hero-eyebrow">Vox Probabilis · Academic</div>
+      <h1 class="hero-title">
+        Audiências como <em>material didático</em>.<br>
+        Análise prosódica para o estudo do Direito.
+      </h1>
+      <p class="hero-sub">
+        Para alunos e professores estudarem a estrutura da prova oral. Faça upload de
+        audiências públicas ou já transitadas em julgado, e veja como o sinal espectral
+        dialoga com a estratégia processual. Aprenda a textura da audiência antes
+        de pisar nela.
+      </p>
+      <div class="hero-cta-row">
+        <a href="#academic-pricing" class="btn btn-primary">Comece pelo trial</a>
+        <a href="#academic-how" class="btn btn-secondary">Ver como funciona</a>
+      </div>
+      <div class="hero-meta">
+        Para uso educacional · pós-veredito · audiências públicas
+      </div>
+    </div>
+
+    <div class="demo-plot reveal">
+      <div class="demo-plot-frame">
+        <img src="audiencia_cartesian.png"
+             alt="Exemplo de plot cartesiano: análise prosódica de uma audiência pública mostrando trajetórias de duas testemunhas">
+        <p class="demo-caption">
+          Audiência real do Juizado Especial Cível de Santo André (processo 1007542-44.2020.8.26.0554).
+          Cada ponto é uma fase processual; cada cor é uma testemunha. Note como uma migra entre quadrantes
+          sob pressão do advogado contrário, enquanto a outra mantém perfil estável.
+        </p>
+      </div>
+    </div>
+
+    <div class="section section-narrow reveal">
+      <h2 class="section-title">O que é &mdash; e o que <em class="text-red italic">não</em> é</h2>
+      <div class="framing">
+        <div class="framing-col framing-yes">
+          <h3>Use para</h3>
+          <ul>
+            <li>Aulas de Direito Processual, prova oral, técnicas de inquirição</li>
+            <li>Estudo individual de audiências paradigmáticas</li>
+            <li>Trabalhos de conclusão e pesquisa acadêmica</li>
+            <li>Preparação pedagógica de aulas e simulações</li>
+            <li>Reconhecer a textura prosódica da testemunha sob pressão</li>
+            <li>Comparar padrões em audiências do mesmo tribunal</li>
+          </ul>
+        </div>
+        <div class="framing-col framing-no">
+          <h3>Não use para</h3>
+          <ul>
+            <li>Anexar a peças processuais ou pareceres em juízo</li>
+            <li>Tomar decisão sobre a credibilidade de testemunha em processo ativo</li>
+            <li>Substituir perícia técnica ou ouvitoria forense</li>
+            <li>Analisar audiências sob segredo de justiça ou sigilo</li>
+            <li>Classificar binariamente "verdade" ou "mentira"</li>
+            <li>Treinar IA ou comercializar análises geradas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="academic-how" class="section reveal">
+      <h2 class="section-title">Como funciona</h2>
+      <p class="section-sub">
+        Upload, confirmação de fases processuais, análise. Em três passos didáticos.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">i.</div>
+          <h3>Upload da audiência</h3>
+          <p>Aceita áudio em .wav, .mp3, .opus ou .m4a, até 200 MB.
+            Declare a elegibilidade (audiência pública ou transitada em julgado).</p>
+        </div>
+        <div class="step">
+          <div class="step-num">ii.</div>
+          <h3>Confirme as fases</h3>
+          <p>O sistema detecta automaticamente: abertura, calibração, inquirição
+            pelo juiz, inquirição pelo advogado contrário. Você revisa.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">iii.</div>
+          <h3>Leia o relatório</h3>
+          <p>Plot cartesiano, transcrição colorimétrica, sumário por testemunha.
+            Métodos abertos &mdash; reproduza você mesmo se quiser.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="academic-pricing" class="section reveal">
+      <h2 class="section-title">Planos</h2>
+      <p class="section-sub">
+        Para estudante individual, professor, ou faculdade inteira.
+        Todos com 36% de desconto no plano anual.
+      </p>
+
+      <div class="pricing-grid four-cols">
+
+        <div class="price-card">
+          <div class="price-tier-name">Trial</div>
+          <div class="price-tier-sub">conheça antes de assinar</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">0</span>
+          </div>
+          <div class="price-period">1 análise · 30 dias</div>
+          <ul class="price-features">
+            <li>Uma audiência completa</li>
+            <li>Relatório com cartesiano</li>
+            <li>Acesso à metodologia</li>
+            <li>Sem cartão de crédito</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Começar grátis</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier-name">Avulsa</div>
+          <div class="price-tier-sub">uma análise por vez</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">2.22</span>
+          </div>
+          <div class="price-period">por análise</div>
+          <ul class="price-features">
+            <li>Pague só quando usar</li>
+            <li>Relatório completo</li>
+            <li>Acesso a metodologia</li>
+            <li>Sem assinatura</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Comprar análise</a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="price-card-badge">Mais popular</div>
+          <div class="price-tier-name">Estudante</div>
+          <div class="price-tier-sub">para uso contínuo</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">16.60</span>
+          </div>
+          <div class="price-period">/mês &middot; ou $127,49/ano</div>
+          <ul class="price-features">
+            <li><span class="feat-highlight">60 análises por mês</span></li>
+            <li>82 análises no plano anual</li>
+            <li>Salvar sessões na conta</li>
+            <li>Histórico ilimitado</li>
+            <li>Suporte por email</li>
+          </ul>
+          <a href="#" class="btn btn-primary price-cta">Assinar</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier-name">Professor</div>
+          <div class="price-tier-sub">individual ou instituição</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">36</span>
+          </div>
+          <div class="price-period">/mês &middot; 3+ seats = 33% off anual</div>
+          <ul class="price-features">
+            <li><span class="feat-highlight">Análises ilimitadas</span></li>
+            <li>Compartilhar com alunos</li>
+            <li>Templates por disciplina</li>
+            <li>Plano institucional automático em 3+ profs</li>
+            <li>Suporte prioritário</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Falar com a gente</a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="methodology-banner reveal">
+      <div class="methodology-banner-icon">~</div>
+      <p>
+        Cláusula de reprodutibilidade: todo número exibido pelo Academic pode ser
+        reproduzido pelo usuário rodando o pipeline open-source no
+        <a href="https://github.com/sfaustodev/NLP-AI" target="_blank" rel="noopener">repositório no GitHub</a>
+        com o mesmo áudio. Sem caixa-preta, sem scoring proprietário, sem peso oculto.
+        Veja também os <a href="#" target="_blank">Termos de Uso</a> e a
+        <a href="#" target="_blank">Metodologia detalhada</a>.
+      </p>
+    </div>
+
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 3: COACH -->
+  <!-- ============================================================ -->
+  <section id="tab-coach" class="tab-panel" role="tabpanel" aria-labelledby="Coach">
+
+    <div class="hero">
+      <div class="hero-eyebrow">Vox Probabilis · Coach</div>
+      <h1 class="hero-title">
+        Treine seu cliente com <em>indicador objetivo</em>.<br>
+        Preparação que se vê.
+      </h1>
+      <p class="hero-sub">
+        Para advogados em exercício preparando clientes ou testemunhas. Sessão ao vivo,
+        com captura nativa pelo navegador, baseline calibrado em segundos, e feedback
+        prosódico em tempo real depois de cada resposta. O que antes era intuição
+        agora é também sinal.
+      </p>
+      <div class="hero-cta-row">
+        <a href="#coach-pricing" class="btn btn-primary">Trial grátis</a>
+        <a href="#coach-how" class="btn btn-secondary">Como funciona</a>
+      </div>
+      <div class="hero-meta">
+        Preparação pré-audiência &middot; uso interno do escritório &middot; LGPD friendly
+      </div>
+    </div>
+
+    <div class="section section-narrow reveal">
+      <h2 class="section-title">O que é &mdash; e o que <em class="text-red italic">não</em> é</h2>
+      <div class="framing">
+        <div class="framing-col framing-yes">
+          <h3>Use para</h3>
+          <ul>
+            <li>Preparar cliente para depoimento pessoal</li>
+            <li>Treinar testemunha arrolada por você antes da audiência</li>
+            <li>Identificar respostas ensaiadas que soam tensas</li>
+            <li>Rodar bateria de perguntas espelhando o que o advogado contrário faria</li>
+            <li>Acompanhar evolução do baseline do cliente entre sessões (Tier 2+)</li>
+            <li>Relatórios narrativos pra revisão depois da sessão</li>
+          </ul>
+        </div>
+        <div class="framing-col framing-no">
+          <h3>Não use para</h3>
+          <ul>
+            <li>Produzir evidência judicial ou anexar a peças processuais</li>
+            <li>Analisar testemunha da parte contrária</li>
+            <li>Diagnosticar quem está dizendo "verdade" ou "mentira"</li>
+            <li>Coagir cliente ou usar contra interesse dele</li>
+            <li>Substituir o seu julgamento profissional &mdash; é apoio, não resposta</li>
+            <li>Compartilhar resultados sem consentimento do cliente</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="coach-how" class="section reveal">
+      <h2 class="section-title">Como funciona</h2>
+      <p class="section-sub">
+        Sessão ao vivo, navegador, microfone. Sem instalar nada, sem upload de arquivo.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">i.</div>
+          <h3>Crie a sessão</h3>
+          <p>Dá nome, opcionalmente cola a bateria de perguntas que você planeja
+            ensaiar. Recebe um link de sessão pra você ou pro cliente acessar.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">ii.</div>
+          <h3>Cliente calibra</h3>
+          <p>O cliente fala 8 segundos de uma frase neutra. Sistema mede SNR do
+            microfone, estabelece baseline da sessão, e libera o ciclo de prática.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">iii.</div>
+          <h3>Pratique e veja</h3>
+          <p>Botão "Pergunta", botão "Resposta", botão "Parar". Em 2&ndash;3 segundos
+            o card da resposta aparece com indicador colorimétrico e narrativa
+            sobre o que mudou em relação ao baseline.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="coach-pricing" class="section reveal">
+      <h2 class="section-title">Planos</h2>
+      <p class="section-sub">
+        Do advogado autônomo ao escritório de alto volume.
+        Os números abaixo trocam com o toggle abaixo.
+      </p>
+
+      <div class="pricing-toggle">
+        <span class="pricing-toggle-label active" data-value="monthly">Mensal</span>
+        <button class="toggle-switch" data-active="monthly" role="switch" aria-label="Alternar entre cobrança mensal e anual">
+          <span class="toggle-knob"></span>
+        </button>
+        <span class="pricing-toggle-label" data-value="annual">
+          Anual <span class="discount-badge">−36%</span>
+        </span>
+      </div>
+
+      <div class="pricing-grid four-cols">
+
+        <div class="price-card" data-monthly="0" data-annual="0">
+          <div class="price-tier-name">Trial</div>
+          <div class="price-tier-sub">conheça antes de assinar</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">0</span>
+          </div>
+          <div class="price-period">1 sessão · até 5 respostas</div>
+          <ul class="price-features">
+            <li>Uma sessão completa</li>
+            <li>Sem retenção de áudio</li>
+            <li>Sem geração de relatório</li>
+            <li>Sem cartão de crédito</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Começar grátis</a>
+        </div>
+
+        <div class="price-card" data-monthly="36.00" data-annual="276.48">
+          <div class="price-tier-name">Solo Practitioner</div>
+          <div class="price-tier-sub">advogado autônomo</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">36.00</span>
+          </div>
+          <div class="price-period">/mês</div>
+          <ul class="price-features">
+            <li><span class="feat-highlight">45 sessões por mês</span></li>
+            <li>Análises ilimitadas por sessão</li>
+            <li>15 relatórios padrão / mês (Claude Sonnet)</li>
+            <li>Indicador em tempo real</li>
+            <li>Sem retenção de áudio</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Assinar Tier 1</a>
+        </div>
+
+        <div class="price-card featured" data-monthly="77.00" data-annual="591.36">
+          <div class="price-card-badge">Mais popular</div>
+          <div class="price-tier-name">Firm Standard</div>
+          <div class="price-tier-sub">escritório de volume médio</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">77.00</span>
+          </div>
+          <div class="price-period">/mês</div>
+          <ul class="price-features">
+            <li><span class="feat-highlight">Sessões ilimitadas</span></li>
+            <li><span class="feat-highlight">50 relatórios personalizados (Claude Opus)</span></li>
+            <li>Retenção de áudio opcional (até 90 dias)</li>
+            <li>Histórico cross-session do mesmo cliente</li>
+            <li>Templates customizáveis de perguntas</li>
+            <li>Comparação de baseline ao longo do tempo</li>
+          </ul>
+          <a href="#" class="btn btn-primary price-cta">Assinar Tier 2</a>
+        </div>
+
+        <div class="price-card" data-monthly="141.90" data-annual="1089.71">
+          <div class="price-tier-name">Firm Pro</div>
+          <div class="price-tier-sub">escritório de alto volume</div>
+          <div class="price-amount">
+            <span class="currency">$</span>
+            <span class="value">141.90</span>
+          </div>
+          <div class="price-period">/mês</div>
+          <ul class="price-features">
+            <li><span class="feat-highlight">Tudo ilimitado, com Claude Opus</span></li>
+            <li>Retenção de áudio até 1 ano</li>
+            <li>Relatórios com marca do escritório</li>
+            <li>Suporte prioritário (24h úteis)</li>
+            <li>Acesso à API (v0.2)</li>
+            <li>Analytics anônimo agregado</li>
+          </ul>
+          <a href="#" class="btn btn-secondary price-cta">Falar com a gente</a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="methodology-banner reveal">
+      <div class="methodology-banner-icon">~</div>
+      <p>
+        Coach é ferramenta de preparação. Os outputs são para o uso interno do escritório
+        &mdash; expressamente vedado anexar a peças processuais, conforme nossos
+        <a href="#" target="_blank">Termos de Uso</a>. Áudio é processado em memória e descartado
+        (Tier 1) ou criptografado em repouso com chave derivada do token da sessão (Tier 2+).
+        Modelo de termo de consentimento do cliente
+        <a href="#" target="_blank">disponível para download</a>.
+      </p>
+    </div>
+
+  </section>
+
+  </main>
+
+
+  <!-- ============================================================ -->
+  <!-- FOOTER -->
+  <!-- ============================================================ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col footer-brand">
+        <div class="logo">
+          <span class="logo-mark">~</span>VOX&nbsp;PROBABILIS
+        </div>
+        <p>
+          Análise prosódica baseada em pesquisa publicada em open access.
+          Dedicado a quem pensa devagar.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Pesquisa</h4>
+        <a href="https://zenodo.org/records/19396809" target="_blank" rel="noopener">Paper (DOI)</a>
+        <a href="https://zenodo.org/records/19478167" target="_blank" rel="noopener">Livro <em>Logos Probabilis</em></a>
+        <a href="https://github.com/sfaustodev/NLP-AI" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://faustodev.gumroad.com/l/logosprobabilis" target="_blank" rel="noopener">Gumroad</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Produtos</h4>
+        <a href="#v1">Explorer</a>
+        <a href="#academic">Academic</a>
+        <a href="#coach">Coach</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#" target="_blank">Termos de Uso</a>
+        <a href="#" target="_blank">Privacidade</a>
+        <a href="#" target="_blank">Metodologia</a>
+        <a href="#" target="_blank">LGPD</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>FAUSTO, J. &amp; CLAUDE &mdash; 2026</span>
+      <span>MIT LICENSE &middot; OPEN ACCESS &middot; ZERO TRACKING</span>
+    </div>
+  </footer>
+
+  <script src="static/script.js"></script>
+</body>
+</html>
