@@ -63,6 +63,15 @@ class Settings:
     liveness_mode: str
     hostname: str
 
+    # Coach (VOX-COACH-B)
+    coach_hmac_secret: str
+    coach_sonnet_api_key: str | None
+    coach_sonnet_model: str
+    coach_audio_delete_delay_s: int
+    coach_session_ttl_minutes: int
+    coach_t1_session_limit: int
+    coach_t1_report_limit: int
+
 
 def _load() -> Settings:
     salt = _get("VOX_SECRET_SALT")
@@ -83,6 +92,12 @@ def _load() -> Settings:
 
     metrics_key = os.environ.get("VOX_METRICS_KEY", "").strip() or None
 
+    # Coach: HMAC secret defaults to derivation from VOX_SECRET_SALT if not set
+    # explicitly. Production should set VOX_COACH_HMAC_SECRET to its own value
+    # so rotating Coach tokens doesn't invalidate v0.1 IP hashes.
+    coach_hmac = os.environ.get("VOX_COACH_HMAC_SECRET", "").strip() or f"coach-{salt}"
+    coach_sonnet_key = os.environ.get("VOX_COACH_SONNET_API_KEY", "").strip() or None
+
     return Settings(
         secret_salt=salt,
         metrics_key=metrics_key,
@@ -96,6 +111,13 @@ def _load() -> Settings:
         cors_origins=origins,
         liveness_mode=liveness,
         hostname=_get("VOX_HOSTNAME", "voxprobabilis.com"),
+        coach_hmac_secret=coach_hmac,
+        coach_sonnet_api_key=coach_sonnet_key,
+        coach_sonnet_model=_get("VOX_COACH_SONNET_MODEL", "claude-sonnet-4-6"),
+        coach_audio_delete_delay_s=_get_int("VOX_COACH_AUDIO_DELETE_DELAY_S", 60),
+        coach_session_ttl_minutes=_get_int("VOX_COACH_SESSION_TTL_MINUTES", 60),
+        coach_t1_session_limit=_get_int("VOX_COACH_T1_SESSION_LIMIT", 45),
+        coach_t1_report_limit=_get_int("VOX_COACH_T1_REPORT_LIMIT", 15),
     )
 
 
