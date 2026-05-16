@@ -163,9 +163,12 @@ def test_privacy_page_served(client) -> None:
 
 
 def test_terms_page_served(client) -> None:
-    """DEPLOY.md §9 — /terms must serve the ToS as HTML."""
+    """/terms serves the multi-product hub (VOX-LANDING-A). The Coach and
+    Academic per-product Terms HTMLs have their own tests in test_landing.py.
+    """
     r = client.get("/terms")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/html")
-    assert "Terms of Service" in r.text
-    assert "Brazilian law" in r.text
+    assert "Termos de Uso" in r.text
+    assert "Coach" in r.text
+    assert "Academic" in r.text
