@@ -20,6 +20,11 @@ scipy==1.13.1                      # Butterworth bandpass, Hilbert transform
 soundfile==0.12.1                  # WAV/FLAC I/O
 pydub==0.25.1                      # MP3/M4A/OGG via ffmpeg
 
+# --- Coach (VOX-COACH-B): LLM reports + PDF generation
+anthropic==0.40.0                  # Claude SDK for Sonnet 4.6 narrative reports
+reportlab==4.2.5                   # PDF generation (Terms / Consent / Session Report)
+matplotlib==3.9.2                  # cartesian plot PNG embedded in PDFs
+
 # --- Testing
 pytest==8.3.3
 httpx==0.27.2                      # async test client for FastAPI
