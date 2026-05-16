@@ -44,6 +44,11 @@ def tmp_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     import importlib
     from app import config as _config
     importlib.reload(_config)
+    # Apply migrations so tests using tmp_db directly (without the client
+    # fixture, e.g. Coach DB unit tests) get the schema ready.
+    from app import db as _db
+    importlib.reload(_db)
+    _db.apply_migrations()
     return db
 
 
