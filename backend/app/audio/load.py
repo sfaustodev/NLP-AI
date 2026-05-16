@@ -70,9 +70,10 @@ _MAGIC: dict[str, tuple[bytes, int]] = {
 @dataclass(frozen=True, slots=True)
 class LoadedAudio:
     samples: np.ndarray        # mono float32, range [-1, 1]
-    sample_rate: int           # 16000
+    sample_rate: int           # 16000 (always after normalization)
     duration_s: float
     voiced_frame_ratio: float
+    original_sample_rate: int = 16000   # source file sr before resample to 16k
 
 
 def sniff_format(head: bytes) -> str:
@@ -152,6 +153,11 @@ def decode(raw: bytes) -> LoadedAudio:
         if duration_s > MAX_DURATION_S + 0.1:   # defensive; shouldn't happen
             raise_vox(AUDIO_TOO_LONG)
 
+    # Capture the source sample rate before any resampling so Coach's
+    # mic_quality check can warn on low-quality phone-grade recordings
+    # (SPEC_COACH §6 — sr_hz < 22000 downgrades label).
+    original_sr = int(segment.frame_rate)
+
     # Mono, 16 kHz, 16-bit PCM — then re-decode via soundfile for a
     # clean float32 numpy array in [-1, 1].
     segment = segment.set_channels(1).set_frame_rate(TARGET_SR).set_sample_width(2)
@@ -182,4 +188,5 @@ def decode(raw: bytes) -> LoadedAudio:
         sample_rate=TARGET_SR,
         duration_s=duration_s,
         voiced_frame_ratio=float(voiced_ratio),
+        original_sample_rate=original_sr,
     )
