@@ -52,6 +52,7 @@ class Settings:
     # Storage
     db_path: Path
     static_dir: Path
+    marketing_dir: Path
 
     # Behaviour
     log_level: str
@@ -87,6 +88,7 @@ def _load() -> Settings:
         metrics_key=metrics_key,
         db_path=Path(_get("VOX_DB_PATH", "./vox.db")).expanduser().resolve(),
         static_dir=Path(_get("VOX_STATIC_DIR", "../landing_page")).expanduser().resolve(),
+        marketing_dir=Path(_get("VOX_MARKETING_DIR", "../landing_page/marketing")).expanduser().resolve(),
         log_level=_get("VOX_LOG_LEVEL", "INFO").upper(),
         cookie_secure=_get_bool("VOX_COOKIE_SECURE", False),
         max_upload_mb=_get_int("VOX_MAX_UPLOAD_MB", 10),

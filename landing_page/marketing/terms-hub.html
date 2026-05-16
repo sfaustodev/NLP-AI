@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Termos de Uso — Vox Probabilis</title>
+<meta name="description" content="Termos de uso dos produtos Vox Probabilis — Explorer, Academic e Coach." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0A0808; --ink-2: #120E0D; --line: #2A211F;
+    --bone: #E8DFD0; --bone-dim: #BFB4A4; --muted: #7A6F6A;
+    --crimson: #B2231F;
+    --serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% 12%, rgba(178,35,31,0.05), transparent 60%),
+      var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 60px 28px 120px; }
+  .crumb { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .crumb a { text-decoration: none; }
+  .crumb a:hover { color: var(--bone); }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--bone-dim); font-style: italic; font-family: var(--serif); font-size: 18px; margin: 0 0 40px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 24px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 28px 26px; background: var(--ink-2); transition: border-color 0.18s; text-decoration: none; color: var(--bone); display: block; }
+  .card:hover { border-color: var(--crimson); }
+  .card h2 { font-family: var(--serif); font-size: 26px; margin: 0 0 6px; font-weight: 500; }
+  .card .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; color: var(--crimson); text-transform: uppercase; margin-bottom: 14px; display: block; }
+  .card p { margin: 0 0 12px; color: var(--bone-dim); }
+  .card ul { margin: 8px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--bone-dim); }
+  .card li { margin-bottom: 4px; }
+  .card .read { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; color: var(--bone); text-transform: uppercase; margin-top: 18px; display: inline-block; }
+  .v1-note { margin-top: 50px; border-left: 2px solid var(--line); padding: 10px 18px; color: var(--bone-dim); font-style: italic; font-family: var(--serif); font-size: 16px; }
+  .v1-note a { color: var(--bone); text-decoration: underline; text-decoration-color: var(--line); }
+  .v1-note a:hover { text-decoration-color: var(--crimson); }
+  .back { display: inline-block; margin-top: 56px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--bone); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="/">Vox Probabilis</a></div>
+  <h1>Termos de Uso</h1>
+  <p class="sub">Cada produto tem seus próprios termos. Leia o do produto que você quer usar.</p>
+
+  <div class="grid">
+    <a class="card" href="/coach/terms">
+      <span class="tag">Coach · Preparação</span>
+      <h2>Termos do Coach</h2>
+      <p>Ferramenta interativa de preparação pré-audiência para advogados em exercício, em sessões 1-on-1 com cliente ou testemunha.</p>
+      <ul>
+        <li>Uso restrito a sessões privadas do escritório</li>
+        <li>Vedado uso como evidência judicial</li>
+        <li>Áudio descartado em ≤60s · LGPD Art. 11</li>
+        <li>Limitação de responsabilidade: 12mo pago ou R$ 1.000</li>
+      </ul>
+      <span class="read">Ler os 8 artigos →</span>
+    </a>
+
+    <a class="card" href="/academic/terms">
+      <span class="tag">Academic · Educacional</span>
+      <h2>Termos do Academic</h2>
+      <p>Análise prosódica comparativa de audiências públicas ou transitadas em julgado, para ensino, pesquisa e estudo individual.</p>
+      <ul>
+        <li>Uso exclusivamente educacional</li>
+        <li>Vedado uso processual em curso</li>
+        <li>Reprodutibilidade open-source garantida</li>
+        <li>Limitação de responsabilidade: 30d pago ou R$ 500</li>
+      </ul>
+      <span class="read">Ler os 8 artigos →</span>
+    </a>
+  </div>
+
+  <div class="v1-note">
+    O <strong>Explorer</strong> (V1) é uma ferramenta de exploração gratuita sob licença MIT. Seus termos vivem em <a href="/privacy">privacidade</a> e na <a href="https://github.com/sfaustodev/NLP-AI" target="_blank" rel="noopener">licença do repositório</a>.
+  </div>
+
+  <a class="back" href="/">← voltar ao site</a>
+</div>
+</body>
+</html>

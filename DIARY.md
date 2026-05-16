@@ -4,6 +4,65 @@
 
 ---
 
+## 2026-05-16 — VOX-LANDING-A Phase A local · marketing site 3-tab + Terms
+
+**Tickets touched:** `VOX-LANDING-A` (novo umbrella, top-level)
+
+**Goal:** ship `https://voxprobabilis.com` 3-tab marketing landing (Explorer/Academic/Coach) com pricing visível e Terms sérios article-numbered, pra adv amigo do Faustão. Sem checkout real (CTA-only mantido per SPRINT §0 #6).
+
+**Done (Phase A, 8 commits atômicos):**
+
+- **A.1** `19062b8` `c34143b` — import 4 files do site (`index.html`, `static/style.css`, `static/script.js`, `audiencia_cartesian.png`) + 2 SPECs (Coach v0.1.1 + Academic v0.1.0). Vinham do main repo untracked (geradas em outra sessão).
+- **A.2** `355159a` — paths assets reescritos pra `/m/*` mount (3 linhas em `marketing/index.html`).
+- **A.3** `f3ef69d` — 3 HTMLs novos em `landing_page/marketing/`:
+  - `coach-terms.html` — SPEC_COACH §8.1 Art. 1º-8º verbatim (definição / finalidade exclusiva / vedação processual / consentimento / LGPD / sigilo / limit R$1.000 ou 12mo / foro Porto Seguro)
+  - `academic-terms.html` — SPEC_ACADEMIC §8.2 Art. 1º-8º verbatim (definição / finalidade educacional / vedação processual em curso / responsabilidade usuário / LGPD Art. 7 IV / reprodutibilidade / limit R$500 ou 30d c/ incisos I-IV / foro Porto Seguro)
+  - `terms-hub.html` — 2 cards apresentando + linkando; v0.1 Explorer mencionado como MIT
+- **A.4** `2cb04f1` — `href="#"` placeholders trocados pelos novos paths (footer + 2 banners methodology). 8 pricing CTAs mantidos `href="#"` (CTA-only confirmado q2).
+- **A.5** `38589fa` `dd89edf` — `VOX_MARKETING_DIR` env var + `_mount_static` refatorada pra servir 2 trees: marketing landing em `/` + v0.1 tool em `/app` + 3 Terms routes + `/m/*` assets mount. Helper `_serve(path, label)` centraliza FileResponse + STATIC_MISSING fallback (DRY).
+- **A.6** `f463b95` — `test_landing.py` novo com 11 testes cobrindo `/ /app /coach/terms /academic/terms /terms /m/static/* /m/audiencia_cartesian.png` + regression `/privacy /api/health /assets/*`. `test_api.py::test_terms_page_served` ajustado pro novo hub content.
+
+**In flight:**
+- A.8 codex-cross-review do diff Phase A (8 commits, ~1900 linhas líquidas: 1542 marketing + 1459 specs + 119 tests + 47 main.py + 7 config + 6 .env.example + 16 index.html)
+- B production deploy — pendente súplica autorização escrita Faustão
+
+**Blocked:**
+- Phase B requer autorização explícita produção rule #16D (operação toca VPS prod 89.116.73.118 que serve v0.1 live + risco regressão URL `/` → `/app`).
+- Per global rule #13, task fica aberta até Faustão escrever confirmação smoke browser + adv link.
+
+**Files changed (worktree):**
+- `landing_page/marketing/` (novo dir, 7 files): `index.html` `static/style.css` `static/script.js` `audiencia_cartesian.png` `coach-terms.html` `academic-terms.html` `terms-hub.html`
+- `landing_page/SPECS/` (novo dir, 2 files): `SPEC_COACH.md` `SPEC_ACADEMIC.md`
+- `backend/app/main.py` (`_mount_static` refatorada · +47 -24)
+- `backend/app/config.py` (+2 linhas: `marketing_dir` field + load)
+- `backend/.env.example` (+5 linhas: VOX_MARKETING_DIR doc)
+- `backend/tests/test_landing.py` (novo · 113 linhas · 11 tests)
+- `backend/tests/test_api.py` (test_terms_page_served ajustado)
+- `JIRA.md` (bloco VOX-LANDING-A em Active)
+
+**Tests local:** 16/16 verdes (test_landing.py 11 + test_api.py non-audio 5). 10 falhas pré-existentes em audio tests (`OSError: libllvmlite.dylib` no venv local Python 3.13 — ABI mismatch numba/llvmlite). Não relacionadas a VOX-LANDING-A. Prod VPS Python 3.12 historicamente 43/43 verde (DIARY 2026-05-10).
+
+**Decisões logadas (não viraram HUMAN — discipline §9 filtro):**
+1. `voxprobabilis-site/` extraído renomeado pra `landing_page/marketing/` no worktree (clareza semântica; tarball original preserva nome no main repo)
+2. Privacidade footer reusa `landing_page/privacy.html` v0.1 (LGPD básico já cobre; Coach-dedicated Privacy fica pra sprint posterior)
+3. Metodologia footer + Academic banner → Zenodo paper DOI (sem `/methodology` HTML dedicado v0.1.1)
+4. LGPD footer → anchor `/privacy#lgpd` (já é seção do v0.1 privacy)
+5. `/terms` v0.1 (genérico Terms of Service `landing_page/terms.html`) ficou órfão de rota mas file mantido no disk; hub linka pra v0.1 via /privacy + GitHub MIT license
+6. `coach-terms.html` link consent template → `/coach/terms#art-4` anchor (PDF reportlab real fica pra `VOX-COACH-B`)
+
+**SPRINT.md:** não editei (§0 #8). Sprint VOX-DEPLOY-A continua DONE; VOX-LANDING-A é novo umbrella top-level (rule #18: scope distinto, marketing channel vs backend tool — exceção C cabe). Faustão pode formalizar sprint VOX-LANDING-A se quiser.
+
+**HUMAN.md:** sem nova pergunta. 8 open questions herdadas do sprint anterior (Q-06 contact@ Porkbun, Q-07 audios_claude WAVs, Q-08 wire.js inline) continuam, mas Q-01..Q-05 já tão em Resolved também — duplicadas, vou limpar no fim da sessão.
+
+**Next session should start with:**
+1. Optional: rodar `/codex-cross-review` no diff Phase A (8 commits) antes da súplica prod (rule #20 pre-merge)
+2. Apresentar súplica produção formato rule #16D pro Faustão autorizar Phase B
+3. Após autorização: Phase B steps 1-13 (SSH + git pull + .env append + systemctl restart + smoke curl + browser test + atualiza JIRA/DIARY)
+4. Faustão manda URL pro adv; aguarda confirmação escrita pra fechar VOX-LANDING-A
+5. v0.1.1 close-out commit em DIARY + JIRA → Done
+
+---
+
 ## 2026-05-10 — Phase E close · ticket fechado
 
 **Tickets touched:** `VOX-DEPLOY-A` → Done

@@ -91,52 +91,75 @@ def _register_middleware(app: FastAPI) -> None:
 
 
 def _mount_static(app: FastAPI) -> None:
-    """Serve the existing landing page as the site root.
+    """Serve the marketing landing at ``/`` and the v0.1 tool at ``/app``.
 
-    We don't use ``StaticFiles(..., html=True)`` at ``/`` because that
-    would swallow the ``/api/*`` routes. Instead we expose ``/`` as an
-    explicit route that returns ``index.html``, and mount the rest of
-    the static tree under ``/assets``. If the static dir vanishes (e.g.
-    VOX_STATIC_DIR points nowhere), we still boot — the API keeps
-    working, and a minimal placeholder serves at ``/``.
+    Two static trees coexist:
+
+    - ``settings.marketing_dir`` — 3-tab marketing landing (Explorer/Academic/
+      Coach) with pricing and Terms. Assets mounted at ``/m/*``.
+    - ``settings.static_dir`` — v0.1 functional tool (calibrate + analyze).
+      Assets mounted at ``/assets/*``.
+
+    ``/api/*`` routes are registered before this, so they win over any
+    ``/`` collision.
+
+    If a directory or file vanishes (e.g. VOX_MARKETING_DIR pointing
+    nowhere) we still boot — the API keeps working and the missing route
+    returns a typed STATIC_MISSING error so ops can diagnose quickly.
     """
     static_root: Path = settings.static_dir
-    index_path = static_root / "index.html"
-    privacy_path = static_root / "privacy.html"
-    terms_path = static_root / "terms.html"
+    marketing_root: Path = settings.marketing_dir
 
-    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
-    def _index():
-        if index_path.is_file():
-            return FileResponse(index_path)
+    def _serve(path: Path, label: str) -> FileResponse | JSONResponse:
+        if path.is_file():
+            return FileResponse(path)
         return JSONResponse(
             status_code=404,
             content={
                 "error": {
                     "code":    "STATIC_MISSING",
-                    "message": "Landing page not found at configured static dir.",
-                    "hint":    f"Set VOX_STATIC_DIR to the directory containing index.html (currently {static_root}).",
+                    "message": f"{label} not found at configured path.",
+                    "hint":    f"Expected at {path}.",
                 },
             },
         )
 
+    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+    def _root():
+        return _serve(marketing_root / "index.html", "Marketing landing")
+
+    @app.api_route("/app", methods=["GET", "HEAD"], include_in_schema=False)
+    def _app_tool():
+        return _serve(static_root / "index.html", "v0.1 tool landing")
+
     @app.api_route("/privacy", methods=["GET", "HEAD"], include_in_schema=False)
     def _privacy():
-        if privacy_path.is_file():
-            return FileResponse(privacy_path)
-        return JSONResponse(status_code=404, content={"error": {"code": "STATIC_MISSING", "message": "privacy.html not found", "hint": None}})
+        return _serve(static_root / "privacy.html", "privacy.html")
 
     @app.api_route("/terms", methods=["GET", "HEAD"], include_in_schema=False)
-    def _terms():
-        if terms_path.is_file():
-            return FileResponse(terms_path)
-        return JSONResponse(status_code=404, content={"error": {"code": "STATIC_MISSING", "message": "terms.html not found", "hint": None}})
+    def _terms_hub():
+        return _serve(marketing_root / "terms-hub.html", "terms-hub.html")
+
+    @app.api_route("/coach/terms", methods=["GET", "HEAD"], include_in_schema=False)
+    def _coach_terms():
+        return _serve(marketing_root / "coach-terms.html", "coach-terms.html")
+
+    @app.api_route("/academic/terms", methods=["GET", "HEAD"], include_in_schema=False)
+    def _academic_terms():
+        return _serve(marketing_root / "academic-terms.html", "academic-terms.html")
 
     if static_root.is_dir():
         app.mount(
             "/assets",
             StaticFiles(directory=static_root, check_dir=False),
             name="assets",
+        )
+
+    if marketing_root.is_dir():
+        app.mount(
+            "/m",
+            StaticFiles(directory=marketing_root, check_dir=False),
+            name="marketing",
         )
 
 
