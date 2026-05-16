@@ -4,6 +4,67 @@
 
 ---
 
+## 2026-05-16 — VOX-COACH-B Phase B.1 backend skeleton COMPLETE
+
+**Tickets touched:** `VOX-COACH-B`
+
+**Done (Phase B.1, 9 commits atômicos):**
+
+- `c371d1c` docs: sacred files start sprint + HUMAN cleanup
+- `b5237c3` chore: add anthropic + reportlab + matplotlib deps (pip install via `--only-binary=:all:`; scipy 1.13.1 rebuild failed py3.13 mas já estava em 1.17.1 pré-existente)
+- `6322e61` feat: migrations 007/008/009 + coach pkg init
+- `1435f22` feat: session state machine + DB CRUD + **27 tests**
+- `4eb2d0c` feat: HMAC session_token + lawyer cookie + activation_token + **12 tests**
+- `356d54c` feat: mic quality (SNR + sr + centroid) + **24 tests**, LoadedAudio extended c/ original_sample_rate
+- `8961e49` feat: baseline + per-response feedback + **34 tests** (9 baseline + 25 feedback)
+- `426207d` feat: tier pricing + lawyer accounts CRUD + **23 tests** (4 tiers, quota gates, magic-link flow, LGPD soft-delete)
+
+**Tests:** **120 verde** em Coach total (acumulado durante B.1). Suite inteira passa exceto 10 falhas pré-existentes audio (llvmlite ABI py3.13 local, não relacionadas).
+
+**Files changed (B.1 só):**
+- `backend/requirements.txt` (+3 deps)
+- `backend/.env.example` (+8 vars Coach)
+- `backend/app/config.py` (+7 Settings fields)
+- `backend/app/audio/load.py` (LoadedAudio.original_sample_rate)
+- `backend/app/coach/` (novo dir, 7 modules: __init__/session/auth/mic_quality/baseline/feedback/pricing/users)
+- `backend/migrations/` (3 novas: 007/008/009)
+- `backend/tests/conftest.py` (tmp_db agora aplica apply_migrations automatico)
+- `backend/tests/test_coach_*.py` (6 novos files, 120 tests)
+- `JIRA.md` `DIARY.md` `HUMAN.md` (sprint start + Q-06/07/08 resolved)
+
+**Architecture decisions logadas:**
+- Feature extraction NÃO está em coach (reusa app.audio.features.extract_all do v0.1). Coach modules consomem feature dicts (testáveis sem librosa/numba).
+- HMAC SHA-256 com kind separation (session vs lawyer) — confused-deputy proteção
+- Pure numpy SNR + centroid em mic_quality (sem librosa dependency)
+- pricing.py 4 tiers definidos mas só FREE_TRIAL + TIER_1_MONTHLY são ativados em VOX-COACH-B; TIER_2/3 viram funcionais em VOX-COACH-C (Cofre features)
+- Soft-delete LGPD em sessions + users + responses (deleted_at coluna)
+
+**In flight:**
+- Phase B.2: routes (`/api/coach/*` 7 endpoints) + Sonnet LLM client + 3 PDFs reportlab — próxima sessão
+- Phase B.3: frontend (`/coach` dashboard + session view + MediaRecorder + polling) — próxima sessão
+- Phase B.4: CLI tier activation + smoke local + PR + súplica prod + deploy — próxima sessão
+- Anthropic API key: Faustão precisa gerar manual no console.anthropic.com antes Phase B.4
+
+**Blocked:**
+- Phase B.4 deploy prod aguarda Anthropic key + súplica autorização rule #16D
+- Audio integration tests (B.2 routes) vão falhar local por llvmlite — prod py3.12 funciona normal
+
+**Não-decisões logadas:**
+- Migration numbering: 007/008/009 reservados (002-006 gap deixado pra Academic futura)
+- Tombstone email pattern `deleted_<rand>@deleted.invalid` em soft_delete_user pra liberar email original
+- conftest tmp_db agora aplica migrations automaticamente — mudança backward-compat
+- pricing tiers em pricing.py com `claude-opus-4-7` model id (latest per knowledge cutoff Jan 2026)
+
+**Next session should start with:**
+1. B.2.9 `coach/routes.py` 7 endpoints FastAPI router (create/get/calibrate/response/end/report.html/report.pdf/quota) + wire em main.py
+2. B.2.11 `coach/reports/sonnet_standard.py` Anthropic SDK wrapper + mock test (env sem key → template fallback)
+3. B.2.12-14 `coach/pdf/{terms,consent,session_report}.py` reportlab generators + tests
+4. B.2 commit + test_coach_routes.py (integration FastAPI TestClient)
+5. B.3 frontend (`landing_page/marketing/coach/{index,session}.html` + `static/{recorder,session}.js`)
+6. B.4 `coach/cli.py` + local smoke uvicorn + PR + súplica + deploy
+
+---
+
 ## 2026-05-16 — VOX-LANDING-A close + VOX-COACH-B start
 
 **Tickets touched:** `VOX-LANDING-A` (close), `VOX-COACH-B` (start)

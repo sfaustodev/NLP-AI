@@ -8,14 +8,24 @@
 ## Active
 
 ### VOX-COACH-B · Coach backend T1 bare (sem checkout)
-- **Status:** 🟡 Em desenvolvimento · Phase B.1 backend skeleton in progress
-- **Branch:** `feat/vox-coach-b`
+- **Status:** 🟡 Em desenvolvimento · Phase B.1 backend skeleton ✅ COMPLETE · B.2-B.4 próxima sessão
+- **Branch:** `feat/vox-coach-b` (10 commits pushed)
 - **Spec:** `landing_page/SPECS/SPEC_COACH.md` v0.1.1
 - **Goal:** advogado clica "Trial grátis" no /coach, faz sessão real (calibração + 3-5 respostas), recebe relatório Sonnet, baixa PDF. Sente o produto antes de pagar.
 - **Plan file:** `/Users/peluche/.claude/plans/pr-ximo-movimento-faust-o-sobe-snuggly-balloon.md` (VOX-COACH-B revision)
+- **Phase B.1 commits (9):**
+  - `c371d1c` docs: sprint start + close VOX-LANDING-A + HUMAN cleanup (Q-06/07/08 resolved)
+  - `b5237c3` chore: anthropic 0.40.0 + reportlab 4.2.5 + matplotlib 3.9.2 deps
+  - `6322e61` feat: migrations 007/008/009 + coach pkg init
+  - `1435f22` feat: session state machine + DB CRUD + **27 tests**
+  - `4eb2d0c` feat: HMAC session_token + lawyer cookie + **12 tests**
+  - `356d54c` feat: mic quality (SNR + sr + centroid) + **24 tests**
+  - `8961e49` feat: baseline + feedback delta+cartesian+label + **34 tests**
+  - `426207d` feat: tier pricing + lawyer accounts CRUD + **23 tests**
+- **Tests Phase B.1:** **120 verde** em modules Coach. Audio tests v0.1 (10 falhas) pré-existente local llvmlite py3.13 — não relacionado.
 - **Sub-phases (checklist):**
-  - [ ] B.1 backend skeleton (8 modules: session/auth/mic_quality/baseline/feedback/pricing + migrations 007-009 + tests)
-  - [ ] B.2 API endpoints + Sonnet LLM + PDF generators (Terms/Consent/Session Report)
+  - [x] B.1 backend skeleton (7 modules: session/auth/mic_quality/baseline/feedback/pricing/users + migrations 007-009 + tests)
+  - [ ] B.2 routes (`/api/coach/*` 7 endpoints) + Sonnet LLM + 3 PDFs reportlab
   - [ ] B.3 frontend (`/coach` dashboard + session live view + MediaRecorder + polling)
   - [ ] B.4 CLI tier activation + local smoke + PR + súplica prod + deploy
 - **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
