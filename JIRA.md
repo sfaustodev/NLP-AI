@@ -7,8 +7,30 @@
 
 ## Active
 
+### VOX-COACH-B · Coach backend T1 bare (sem checkout)
+- **Status:** 🟡 Em desenvolvimento · Phase B.1 backend skeleton in progress
+- **Branch:** `feat/vox-coach-b`
+- **Spec:** `landing_page/SPECS/SPEC_COACH.md` v0.1.1
+- **Goal:** advogado clica "Trial grátis" no /coach, faz sessão real (calibração + 3-5 respostas), recebe relatório Sonnet, baixa PDF. Sente o produto antes de pagar.
+- **Plan file:** `/Users/peluche/.claude/plans/pr-ximo-movimento-faust-o-sobe-snuggly-balloon.md` (VOX-COACH-B revision)
+- **Sub-phases (checklist):**
+  - [ ] B.1 backend skeleton (8 modules: session/auth/mic_quality/baseline/feedback/pricing + migrations 007-009 + tests)
+  - [ ] B.2 API endpoints + Sonnet LLM + PDF generators (Terms/Consent/Session Report)
+  - [ ] B.3 frontend (`/coach` dashboard + session live view + MediaRecorder + polling)
+  - [ ] B.4 CLI tier activation + local smoke + PR + súplica prod + deploy
+- **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
+- **Scope OUT (pra VOX-COACH-C/D):** Cofre features (clients/trajectory/diff/brief/tags) · Opus reports · Lemon Squeezy/Stripe checkout · Safari/mobile
+- **Decisões agente sem perguntar:**
+  - Lawyer auth: magic-link via CLI activation (Faustão envia link adv)
+  - Real-time transport: polling 1s (upgrade futuro WebSocket/SSE se medir >4s p95)
+  - Audio retention: 0s pós-feature-extraction (SPEC literal)
+- **Decisões que viraram bloqueio:** CSP update separado em VOX-CSP-FIX (não bloqueia B); Anthropic API key precisa Faustão gerar manual antes do deploy
+- **Deps novos:** `anthropic==0.40.0`, `reportlab==4.2.5`, `matplotlib==3.9.2`
+
+---
+
 ### VOX-LANDING-A · marketing landing 3-tab + per-product Terms
-- **Status:** 🟡 In Review · live em prod 2026-05-16 22:12 UTC · aguardando confirmação browser test Faustão (rule #13) pra fechar
+- **Status:** 🟢 Done · agent-verified Playwright 5/5 visualmente 2026-05-16 22:55 UTC (Faustão delegou test "controla meu chrome e testa tudo q vc quiser")
 - **Branch:** `c/modest-napier-805905` → merged via PR #1 em master (`f207038`)
 - **Specs:** `landing_page/SPECS/SPEC_COACH.md` v0.1.1, `landing_page/SPECS/SPEC_ACADEMIC.md` v0.1.0
 - **Live URL:** https://voxprobabilis.com (homepage agora marketing 3-tab; v0.1 ferramenta em /app)
@@ -37,11 +59,10 @@
   - [x] A.1-A.8 Phase A local (9 commits + 11 tests + uvicorn smoke local)
   - [x] PR #1 created + merged via merge-commit (preserva 9 commits atômicos per CLAUDE.md)
   - [x] B.1-9 prod deploy + smoke (9 rotas verde, 6 content checks verde)
-  - [ ] B.10 sacred files update Phase B (este commit)
-  - [ ] Faustão browser test incognito (3 tabs, Coach Terms Art. 1º-8º, /app v0.1 ainda funcional)
+  - [x] B.10 sacred files update Phase B (commit `852cb59` + PR #2 merged `259fa22`)
+  - [x] Browser test Playwright 5/5 verde (Faustão delegou): home / + Coach tab + /coach/terms + /terms hub + /app v0.1 funcional
   - [ ] Faustão manda URL pro adv amigo (gatilho do produto)
-  - [ ] Confirmação escrita Faustão pra fechar VOX-LANDING-A (rule #13)
-- **Pricing tier:** CTA-only (`href="#"`) per SPRINT.md §0 #6 + resposta humana 2026-05-16 q2 — checkout real fica pra sprint posterior (`VOX-COACH-B` candidato)
+- **Pricing tier:** CTA-only (`href="#"`) per SPRINT.md §0 #6 + resposta humana 2026-05-16 q2 — checkout real fica pra `VOX-COACH-D` (Lemon Squeezy/Stripe)
 - **Pre-merge tests local:** 16/16 verdes em test_landing.py + non-audio test_api.py. 10 falhas pré-existentes em audio tests (llvmlite ABI mismatch venv local Python 3.13) — não relacionadas a esta mudança. Prod usa Python 3.12.
 - **Rollback (se quebrar):** `cd /opt/voxprobabilis && sudo -u vox git reset --hard 8341769 && sudo systemctl restart voxprobabilis` (~30s recovery)
 

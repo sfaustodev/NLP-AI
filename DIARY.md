@@ -4,6 +4,63 @@
 
 ---
 
+## 2026-05-16 — VOX-LANDING-A close + VOX-COACH-B start
+
+**Tickets touched:** `VOX-LANDING-A` (close), `VOX-COACH-B` (start)
+
+**VOX-LANDING-A close-out:**
+- Browser smoke via Playwright (Faustão delegou: "controla meu chrome e testa tudo q vc quiser"):
+  - `https://voxprobabilis.com/` → 3 tabs renderizam (Explorer/Academic/Coach), hero serif, crimson CTAs, paleta consistente
+  - Click Coach tab → "Treine seu cliente com indicador objetivo" + framing Use/Não use 2-col
+  - `https://voxprobabilis.com/coach/terms` → Art. 1º-8º article-numbered, card crimson Limitação Responsabilidade, Foro Porto Seguro
+  - `https://voxprobabilis.com/terms` → hub 2 cards Coach + Academic
+  - `https://voxprobabilis.com/app` → v0.1 ferramenta intacta (header "Vox · Probabilis V0.1", AGI Logos Probabilis hero, BEGIN THE RITUAL CTA)
+- 5/5 screenshots gravados em `/Users/peluche/Projects/NLP-AI/vox-{home,coach,coach-terms,terms-hub,app}.png` (untracked, gitignore-worthy)
+- Console warning detectado: CSP `script-src 'self' 'unsafe-inline'` bloqueia Cloudflare beacon `static.cloudflareinsights.com/beacon.min.js` → Web Analytics nunca rodou. **PRÉ-EXISTENTE do v0.1** (não regressão VOX-LANDING-A). Vou criar sub-ticket VOX-CSP-FIX separado.
+- VOX-LANDING-A status: 🟢 Done (agent-verified). Pending humano: mandar URL pro adv amigo (Faustão action, fora do ticket).
+
+**VOX-COACH-B start:**
+- Plan file aprovado pelo Faustão. Sprint plano: bare T1 (FREE_TRIAL + TIER_1_MONTHLY), sem Cofre (vai VOX-COACH-C), sem checkout (vai VOX-COACH-D).
+- Branch criada: `feat/vox-coach-b` (off `259fa22`).
+- Sacred files updated: JIRA novo bloco VOX-COACH-B Active + sub-checklist B.1-B.4. HUMAN.md: 3 perguntas pendentes resolvidas (Q-06 confirmado via dig MX, Q-07 path local achado, Q-08 inline mantido per delegação).
+- requirements.txt: +`anthropic==0.40.0`, +`reportlab==4.2.5`, +`matplotlib==3.9.2`. pip install pendente.
+
+**HUMAN.md cleanup:**
+- Q-06 RESOLVED: MX records `fwd1.porkbun.com / fwd2.porkbun.com` + SPF ativo. Faustão já tinha configurado, agente verificou via `dig`.
+- Q-07 RESOLVED: `landing_page/samples/audios_claude/{ai_truth,ai_lie,ai_uncertain}.wav` existem, untracked (privacidade Faustão voice).
+- Q-08 RESOLVED: "confio em vc pra decidir" → manter inline (estado atual, sem refactor).
+- Open queue agora vazia. VOX-COACH-B vai gerar Q-11/Q-12 se decisões surfáceis aparecerem (lawyer auth, real-time transport).
+
+**In flight:**
+- Phase B.1 (8 modules backend skeleton)
+- Decisões agente sem perguntar (per discipline §3, sem trigger HUMAN):
+  - Lawyer auth = magic-link via CLI (Faustão envia link ao adv que cria conta 1×, zero deps SMTP externos)
+  - Real-time transport = polling 1s (FastAPI sem WS nginx config nova, upgrade WS/SSE se medir >4s p95)
+  - Audio retention = 0s pós-extract per SPEC literal
+
+**Blocked:**
+- Phase B.4 step 24 (deploy prod): aguarda Anthropic API key Faustão gerar + Faustão "autorizo prod" string (rule global #16D)
+
+**Files changed (this session start):**
+- `HUMAN.md` (3 Qs movidas pra Resolved + bloco de housekeeping)
+- `JIRA.md` (close VOX-LANDING-A Done · agent-verified + open VOX-COACH-B Active)
+- `DIARY.md` (esta entry)
+- `backend/requirements.txt` (+3 deps Coach)
+
+**Tests:** Playwright browser smoke 5/5 verde (VOX-LANDING-A close). pytest Coach pendente (Phase B.1-B.4 vai gerar ~50 testes novos).
+
+**Next steps imediatos:**
+1. Commit sacred files + requirements (2 commits atômicos)
+2. `pip install -r backend/requirements.txt` (3 packages novos)
+3. Migrations 007/008/009 (Coach DB tables)
+4. Implementar B.1.3-B.1.8 modules + tests sequencial (1 commit por módulo)
+5. PARAR antes de B.2 se decisão auth surgir (default magic-link CLI)
+6. B.2-B.4 sequencial
+7. Súplica prod + deploy
+8. Faustão ativa adv via CLI + manda URL `/coach`
+
+---
+
 ## 2026-05-16 — VOX-LANDING-A Phase B · production deploy + smoke
 
 **Tickets touched:** `VOX-LANDING-A`
