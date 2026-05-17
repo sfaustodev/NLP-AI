@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sessão — Vox Probabilis Coach</title>
+<meta name="description" content="Sessão ao vivo de preparação prosódica — calibre, faça perguntas, veja o resultado." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/coach/static/style.css" />
+</head>
+<body>
+
+<!-- Safari / mobile fallback rendered server-side stays simple; JS hides
+     the main panel below if MediaRecorder/getUserMedia aren't available. -->
+<div id="unsupported" class="unsupported hide">
+  <h1>Navegador não suportado</h1>
+  <p>O Coach atualmente exige Chrome, Firefox ou Edge em desktop (suporte ao Safari planejado).</p>
+  <p><a class="btn secondary" href="/coach">Voltar ao painel</a></p>
+</div>
+
+<header class="coach-header" id="header">
+  <div class="logo">~ Vox Probabilis <small>Coach</small></div>
+  <span class="tier-badge" id="session-name-badge">…</span>
+</header>
+
+<main class="coach-wrap" id="main-panel">
+  <h1 id="session-title">Sessão</h1>
+  <p class="sub" id="session-sub">Carregando…</p>
+
+  <div id="permission-panel" class="panel hide">
+    <div class="panel-title">Acesso ao microfone</div>
+    <p>Coach precisa acessar o microfone para gravar a calibração e as respostas. Clique para autorizar.</p>
+    <button class="btn" id="grant-mic-btn">Autorizar microfone</button>
+    <div id="mic-error" class="banner error hide"></div>
+  </div>
+
+  <div id="calibrate-panel" class="panel hide">
+    <div class="panel-title">Passo 1 · Calibração</div>
+    <p>Cliente vai falar uma frase neutra de 8 segundos. Sistema mede a qualidade do microfone e estabelece o baseline.</p>
+    <p class="muted" style="margin: 14px 0;">Frase sugerida: <em>"Meu nome é &lt;nome&gt;, hoje é &lt;data&gt;, estou em &lt;cidade&gt;."</em></p>
+    <div class="action-bar">
+      <button class="btn" id="calibrate-record-btn">🎤 Gravar calibração</button>
+      <button class="btn secondary hide" id="calibrate-stop-btn">⏹️ Parar</button>
+    </div>
+    <div id="calibrate-status" class="muted"></div>
+    <div id="calibrate-error" class="banner error hide"></div>
+  </div>
+
+  <div id="practice-panel" class="panel hide">
+    <div class="panel-title">Passo 2 · Prática</div>
+    <p>
+      <span class="mic-indicator">
+        Microfone: <span class="mic-dot" id="mic-dot"></span>
+        <span id="mic-label">—</span>
+        <span id="mic-snr" class="muted">·</span>
+      </span>
+    </p>
+
+    <div class="field" style="margin-top: 14px;">
+      <label for="question-text">Pergunta (opcional, ajuda no relatório)</label>
+      <input type="text" id="question-text" placeholder="ex.: Onde você estava no dia 14?" maxlength="240" />
+    </div>
+
+    <div class="action-bar">
+      <button class="btn" id="response-record-btn">🎤 Gravar resposta</button>
+      <button class="btn secondary hide" id="response-stop-btn">⏹️ Parar</button>
+      <button class="btn secondary" id="end-btn">Encerrar sessão</button>
+    </div>
+    <div id="response-status" class="muted"></div>
+    <div id="response-error" class="banner error hide"></div>
+
+    <div class="session-grid">
+      <div>
+        <div class="panel-title" style="margin-bottom: 8px;">Cartesiano</div>
+        <svg id="cartesian-svg" viewBox="0 0 400 400"></svg>
+        <p class="muted" style="font-size: 11px; font-family: var(--mono);">
+          X = naturalidade (esquerda → controle) · Y = tensão involuntária (cima → tensa)
+        </p>
+      </div>
+      <div>
+        <div class="panel-title" style="margin-bottom: 8px;">Histórico</div>
+        <div id="history" class="history">
+          <p class="muted" style="font-size: 13px;">Respostas vão aparecer aqui.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="report-panel" class="panel hide">
+    <div class="panel-title">Relatório</div>
+    <p>Sessão encerrada. O relatório está disponível abaixo e como PDF para download.</p>
+    <div class="action-bar">
+      <a class="btn" id="report-pdf-link" href="#" target="_blank" rel="noopener">Baixar PDF</a>
+      <a class="btn secondary" href="/coach">Voltar ao painel</a>
+    </div>
+    <div id="report-html" class="report-frame">Carregando…</div>
+  </div>
+</main>
+
+<script src="/coach/static/cartesian.js"></script>
+<script src="/coach/static/recorder.js"></script>
+<script src="/coach/static/session.js"></script>
+</body>
+</html>

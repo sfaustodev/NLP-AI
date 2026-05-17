@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Vox Probabilis Coach — Dashboard</title>
+<meta name="description" content="Painel do advogado — criar e acompanhar sessões de preparação prosódica." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/coach/static/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%230a0a0a' width='100' height='100'/%3E%3Ctext x='50' y='70' font-family='Georgia' font-size='70' font-weight='bold' fill='%23c33a3a' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<header class="coach-header">
+  <div class="logo">~ Vox Probabilis <small>Coach</small></div>
+  <span class="tier-badge" id="tier-badge">carregando…</span>
+</header>
+
+<main class="coach-wrap">
+  <h1>Painel</h1>
+  <p class="sub">Crie sessões de preparação. Compartilhe o link com seu cliente — a calibração e a prática rodam no navegador dele.</p>
+
+  <div class="panel">
+    <div class="panel-title">Quota do período</div>
+    <div class="quota-row" id="quota-line">—</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Nova sessão</div>
+    <form id="new-session-form">
+      <div class="field">
+        <label for="session-name">Nome da sessão</label>
+        <input type="text" id="session-name" placeholder='ex.: "João prep — depoimento pessoal"' maxlength="120" />
+      </div>
+      <div class="field">
+        <label for="planned-questions">Perguntas planejadas (opcional, uma por linha)</label>
+        <textarea id="planned-questions" rows="4" placeholder="Onde você estava no dia 14?&#10;Quem mais estava presente?&#10;Por que demorou tanto a reportar?"></textarea>
+      </div>
+      <div id="new-session-error" class="banner warning hide"></div>
+      <div id="new-session-msg" class="banner hide"></div>
+      <button type="submit" id="create-btn">Criar sessão</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Documentos</div>
+    <p class="muted" style="margin: 0 0 12px;">Termos de Uso vinculam o uso do Coach. Modelo de consentimento serve como base para autorização escrita do cliente.</p>
+    <a class="btn secondary" href="/coach/terms.pdf" target="_blank" rel="noopener">Termos de Uso (PDF)</a>
+    &nbsp;
+    <a class="btn secondary" href="/coach/consent-template.pdf" target="_blank" rel="noopener">Modelo de consentimento (PDF)</a>
+  </div>
+
+  <p class="muted" style="margin-top: 40px; font-size: 13px;">
+    Uso exclusivo do escritório. Vedado anexar relatórios a peças processuais (Termos Art. 3º).
+    <a href="/">Voltar ao site</a>
+  </p>
+</main>
+
+<script src="/coach/static/dashboard.js"></script>
+</body>
+</html>
