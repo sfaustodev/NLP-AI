@@ -56,14 +56,17 @@ MAX_DURATION_S = 60.0
 MIN_VOICED_RATIO = 0.10  # reject silence / pure noise
 VOICE_SPLIT_TOP_DB = 30  # librosa.effects.split threshold (SPEC §7.1)
 
-# Magic-byte signatures for the five accepted formats.
+# Magic-byte signatures for the six accepted formats.
 # Order matters: MP4/M4A's 'ftyp' box lives at offset 4 so we test position.
+# WEBM/EBML is added for browser MediaRecorder output (Coach uses
+# audio/webm;codecs=opus on Chrome/Firefox/Edge).
 _MAGIC: dict[str, tuple[bytes, int]] = {
-    "wav":  (b"RIFF", 0),   # then b"WAVE" at offset 8 — checked in sniff()
-    "mp3":  (b"ID3",  0),   # ID3v2-tagged MP3
+    "wav":  (b"RIFF", 0),                # then b"WAVE" at offset 8 — checked in sniff()
+    "mp3":  (b"ID3",  0),                # ID3v2-tagged MP3
     "ogg":  (b"OggS", 0),
     "flac": (b"fLaC", 0),
-    "m4a":  (b"ftyp", 4),   # MP4/M4A box
+    "m4a":  (b"ftyp", 4),                # MP4/M4A box
+    "webm": (b"\x1a\x45\xdf\xa3", 0),    # EBML / Matroska (MediaRecorder output)
 }
 
 

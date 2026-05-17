@@ -64,3 +64,17 @@ def test_sniff_format_rejects_short() -> None:
     with pytest.raises(VoxError) as excinfo:
         sniff_format(b"abc")
     assert excinfo.value.code == "AUDIO_UNSUPPORTED_FORMAT"
+
+
+def test_sniff_format_webm() -> None:
+    """WEBM/EBML header — what MediaRecorder emits from the browser (Coach)."""
+    # EBML signature + enough trailing bytes to clear the 12-byte minimum.
+    head = b"\x1a\x45\xdf\xa3" + b"\x00" * 12
+    assert sniff_format(head) == "webm"
+
+
+def test_sniff_format_ogg_opus() -> None:
+    """Sanity: OggS header still sniffs as ogg (Opus inside OGG container).
+    Some non-Chromium browsers may emit audio/ogg;codecs=opus from MediaRecorder."""
+    head = b"OggS" + b"\x00" * 12
+    assert sniff_format(head) == "ogg"
