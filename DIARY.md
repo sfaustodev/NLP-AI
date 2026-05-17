@@ -4,6 +4,91 @@
 
 ---
 
+## 2026-05-17 — VOX-COACH-B Phases B.2 + B.3 + B.4 (local) COMPLETE
+
+**Tickets touched:** `VOX-COACH-B`
+
+**Done (B.2 — API + LLM + PDFs, 4 commits):**
+
+- `04960bb` feat: Sonnet 4.6 generator + template fallback (FREE_TRIAL path) + 9 tests. Retry 3× exponential backoff em SDK errors. Anthropic SDK lazy-imported. HTML escape em session_name.
+- `4703954` feat: reportlab PDFs — Terms (Art. 1º-8º verbatim SPEC §8.1) + Consent template (signature lines + LGPD) + Session Report (matplotlib cartesian PNG embedded) + 11 tests
+- `d1fd054` feat: 8 endpoints `/api/coach/*` + 6 aux `/coach/*` routes wired em main.py (dashboard, session view, terms.pdf, consent-template.pdf, activate, /coach/static mount conditional). Plus `coach/middleware.py` (Depends helpers) + `coach/responses.py` (response CRUD module)
+- `13df075` test: integration tests Coach routes + auth + activation + PDFs
+
+**Done (B.3 — frontend, 1 commit):**
+
+- `a8e4da4` feat: dashboard + live session view + 5 JS modules
+  - `coach/index.html` — dashboard (quota panel + nova sessao form + PDFs links)
+  - `coach/session.html` — live view (mic permission + calibrate + practice panels com cartesian + history + report)
+  - `coach/static/style.css` — paleta Vox completa, tier badges colored, mic dots, history rows, session grid responsivo
+  - `coach/static/dashboard.js` — DOM construction explicito (sem innerHTML em server data, security hook trippado e fixed)
+  - `coach/static/session.js` — state machine FE + polling 2s. Report HTML renderizado em `<iframe sandbox="">` pra bloquear XSS de LLM-injected scripts
+  - `coach/static/cartesian.js` — SVG widget (init/addPoint/clear) com quadrant labels + color mapping
+  - `coach/static/recorder.js` — MediaRecorder wrapper, Safari detect → blocked, Opus webm preferido + auto-stop timeout
+  - `marketing/index.html` — Coach tab "Trial grátis" CTA + FREE_TRIAL pricing card "Começar grátis" → `/coach` (era `#` placeholder); tiers pagos mantém `#` per SPRINT §0 #6
+
+**Done (B.4 — CLI + smoke, 1 commit):**
+
+- `c1687ce` feat: tier-activation CLI + 7 tests
+  - `python -m app.coach.cli upgrade --email X --tier Y` → cria/atualiza user + imprime activation URL (single-use 7d TTL)
+  - `list-users` → tabela formatada
+  - `revoke --email X` → soft-delete LGPD (email tombstoned)
+  - VoxError handler exit 2 com error code + hint em stderr
+
+**Smoke local end-to-end (sem audio — llvmlite py3.13 ABI issue local; prod py3.12 funciona):**
+
+| Step | Esperado | Resultado |
+|---|---|---|
+| `cli upgrade --email --tier` | activation URL impressa | ✓ token 32-char url-safe |
+| `GET /coach/activate?token=X` | 303 redirect /coach + Set-Cookie HMAC | ✓ `set-cookie: coach_session=...; HttpOnly; SameSite=lax; Max-Age=2592000` |
+| `GET /api/coach/quota` (cookie) | JSON tier + sessions_used | ✓ FREE_TRIAL + 0/0 |
+| `POST /api/coach/session/create` | session_token + state CREATED | ✓ token 138 chars |
+| `GET /api/coach/session/{token}` | session state JSON | ✓ baseline_established false |
+| 2ª `POST create` (quota=1) | 402 COACH_QUOTA_EXCEEDED | ✓ "1/1 used on Trial" |
+| `POST /end` sem calibrate | 400 COACH_INVALID_STATE_FOR_ACTION | ✓ "Cannot end session in state CREATED" |
+
+**Tests pytest local:** 172+ verde, 5 falhas pré-existentes audio (`OSError: libllvmlite.dylib`, llvmlite ABI py3.13 — prod py3.12 não afeta, DIARY 2026-05-16 entry anterior já documenta).
+
+**Security:**
+- HMAC kind separation testada (session token ≠ lawyer cookie mesmo com sig válida)
+- HTML escape em session_name no template fallback
+- `iframe sandbox=""` no report.html (zero JS, zero forms, zero same-origin) bloqueia LLM injection
+- DOM construction explicito em dashboard.js + session.js (security hook satisfeito post-rewrite)
+- Cookie HttpOnly + SameSite=lax + Max-Age 30d (path /)
+
+**Files changed (this session):**
+- `backend/app/coach/{reports/,pdf/,routes.py,middleware.py,responses.py,cli.py}` (novos)
+- `backend/app/main.py` (8 endpoints router + 6 aux routes + activate + /coach/static mount)
+- `backend/requirements.txt` (+pypdf==5.0.1)
+- `backend/tests/test_coach_{reports,pdf,routes,cli}.py` (novos)
+- `landing_page/marketing/coach/{index.html,session.html,static/*}` (7 files novos)
+- `landing_page/marketing/index.html` (2 CTAs Coach apontam /coach)
+
+**In flight:**
+- B.4.3 PR final + merge master (este commit + push branch + gh pr merge)
+- B.4.4 súplica prod + deploy + ativa adv (aguarda Faustão autorização + Anthropic API key)
+
+**Blocked:**
+- Anthropic API key Faustão gerar antes deploy (template fallback funciona sem)
+- Súplica prod escrita rule #16D antes SSH (formato apresentado abaixo)
+
+**Não-decisões logadas (discipline §9):**
+- `coach/responses.py` novo module pra CRUD respostas separado de routes (clean architecture, decouple)
+- `iframe sandbox=""` pro report HTML (decisão segurança vs DOMPurify dep)
+- Smoke audio skipped local (llvmlite) — confiança em prod py3.12 historic
+- `pypdf==5.0.1` add deps (test-only mas pode reusar em VOX-COACH-C)
+
+**Next session should start with:**
+1. Push branch feat/vox-coach-b
+2. Open PR + merge master (preserve atomic commits via --merge)
+3. Apresentar súplica produção formato rule #16D
+4. Após autorização: SSH prod, git pull, append .env (VOX_COACH_HMAC_SECRET + VOX_COACH_SONNET_API_KEY), systemctl restart
+5. Smoke prod 8 novos endpoints + regression v0.1+LANDING
+6. CLI activate Faustão's adv friend + Faustão envia URL
+7. Aguarda "testei tudo passou" pra fechar VOX-COACH-B
+
+---
+
 ## 2026-05-16 — VOX-COACH-B Phase B.1 backend skeleton COMPLETE
 
 **Tickets touched:** `VOX-COACH-B`

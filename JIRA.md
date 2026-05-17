@@ -25,9 +25,12 @@
 - **Tests Phase B.1:** **120 verde** em modules Coach. Audio tests v0.1 (10 falhas) pré-existente local llvmlite py3.13 — não relacionado.
 - **Sub-phases (checklist):**
   - [x] B.1 backend skeleton (7 modules: session/auth/mic_quality/baseline/feedback/pricing/users + migrations 007-009 + tests)
-  - [ ] B.2 routes (`/api/coach/*` 7 endpoints) + Sonnet LLM + 3 PDFs reportlab
-  - [ ] B.3 frontend (`/coach` dashboard + session live view + MediaRecorder + polling)
-  - [ ] B.4 CLI tier activation + local smoke + PR + súplica prod + deploy
+  - [x] B.2 routes (8 endpoints `/api/coach/*`) + Sonnet 4.6 LLM + 3 PDFs reportlab + middleware + responses module
+  - [x] B.3 frontend (`/coach` dashboard + session live view + MediaRecorder + polling 2s + CTA wiring)
+  - [x] B.4.1 CLI tier activation + 7 tests verde
+  - [x] B.4.2 smoke uvicorn local e2e (auth + quota + state machine + redirect + cookies) verde
+  - [ ] B.4.3 PR final + merge master (este commit)
+  - [ ] B.4.4 súplica prod + deploy + ativa adv
 - **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
 - **Scope OUT (pra VOX-COACH-C/D):** Cofre features (clients/trajectory/diff/brief/tags) · Opus reports · Lemon Squeezy/Stripe checkout · Safari/mobile
 - **Decisões agente sem perguntar:**
