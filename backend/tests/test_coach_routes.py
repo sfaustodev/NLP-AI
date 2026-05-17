@@ -271,3 +271,87 @@ def test_full_flow_calibrate_response_end(client) -> None:
     pdf = client.get(f"/api/coach/session/{token}/report.pdf")
     assert pdf.status_code == 200
     assert pdf.content[:5] == b"%PDF-"
+
+
+# ----------------------------------------------------------- /report.html XSS hardening
+
+def _force_ended_session(*, email: str, html: str) -> str:
+    """Helper: build an ENDED session in the DB without going through audio
+    decode (which depends on librosa/numba, fragile locally). Returns the
+    session_token for use against the TestClient.
+
+    Used by the /report.html security-header tests so they exercise the real
+    endpoint logic without paying the calibrate+response audio cost.
+    """
+    from app.coach import session as cs
+    from app.coach import auth as coach_auth
+    from app.coach import users as coach_users
+
+    user = coach_users.create_or_upgrade(email=email, tier_key="TIER_1_MONTHLY")
+    sid_token = coach_auth.gen_session_token("ses_placeholder_to_be_replaced")
+    created = cs.create_session(
+        owner_user_id=user.id,
+        session_name="report-xss-test",
+        session_token=sid_token,
+    )
+    # Replace the placeholder token with one signed against the real session id,
+    # so the path-token middleware accepts it.
+    real_tok = coach_auth.gen_session_token(created.id)
+    from app.db import connect
+    conn = connect()
+    try:
+        conn.execute(
+            "UPDATE coach_sessions SET session_token = ? WHERE id = ?",
+            (real_tok, created.id),
+        )
+    finally:
+        conn.close()
+
+    cs.set_baseline(
+        session_id=created.id,
+        baseline_features={
+            "jitter_local": 0.018, "mfcc_delta_var_mean": 0.04,
+            "spectral_flux_mean": 0.12, "microtremor_envelope": 0.003,
+        },
+        mic_quality_label="GREEN",
+        mic_quality_snr_db=28.0,
+    )
+    cs.mark_in_practice(created.id)
+    cs.end_session(created.id, report_html=html)
+    return real_tok
+
+
+def test_report_html_emits_strict_csp_headers(client, tmp_db) -> None:
+    """VOX-XSS-REPORT-HTML — the report endpoint must return CSP sandbox
+    + script-src 'none' so an LLM-injected <script> cannot execute when the
+    URL is opened directly (outside the iframe sandbox the UI uses)."""
+    tok = _force_ended_session(
+        email="xss@xss.com",
+        html="<h2>Visão geral</h2><p>safe text</p>",
+    )
+    r = client.get(f"/api/coach/session/{tok}/report.html")
+    assert r.status_code == 200
+    csp = r.headers.get("content-security-policy", "")
+    assert "sandbox" in csp
+    assert "script-src 'none'" in csp
+    assert "default-src 'none'" in csp
+    assert "base-uri 'none'" in csp
+    assert "form-action 'none'" in csp
+    assert r.headers.get("x-content-type-options") == "nosniff"
+    assert r.headers.get("x-frame-options") in ("DENY", "SAMEORIGIN")
+    assert r.headers.get("referrer-policy") == "no-referrer"
+    assert "no-store" in r.headers.get("cache-control", "")
+
+
+def test_report_html_renders_llm_html_inert(client, tmp_db) -> None:
+    """The endpoint preserves the LLM body verbatim — the CSP, not server
+    rewriting, is the layer that disarms scripts. Test mirrors that contract
+    so a future commit can't silently switch to sanitisation without us noticing."""
+    nasty = "<h2>Visão geral</h2><script>alert('xss')</script><p>body</p>"
+    tok = _force_ended_session(email="literal@x.com", html=nasty)
+    r = client.get(f"/api/coach/session/{tok}/report.html")
+    assert r.status_code == 200
+    # Body is sent as-is (defence is the CSP header, not body rewriting).
+    assert "<script>alert('xss')</script>" in r.text
+    # And the CSP would make the browser ignore it.
+    assert "script-src 'none'" in r.headers.get("content-security-policy", "")
