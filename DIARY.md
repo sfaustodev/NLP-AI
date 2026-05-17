@@ -4,6 +4,70 @@
 
 ---
 
+## 2026-05-17 — VOX-COACH-B Phase B.4.4 LIVE em prod + sfaustodev@ ativado
+
+**Tickets touched:** `VOX-COACH-B`
+
+**Done:**
+
+- PR #3 merged em master `d1377d1` (17 commits VOX-COACH-B preservados atomic via merge-commit)
+- Faustão autorizou: "prod atorizado" + passou Anthropic API key + email pra ativação `sfaustodev@gmail.com`
+- SSH deploy prod completo (~5 min):
+  - PREV_SHA `f207038` salvo pra rollback
+  - `.env.bak.20260517-034647` criado
+  - `git pull origin master` → HEAD `d1377d1`
+  - `pip install` → matplotlib + (sep call) anthropic 0.40.0 + reportlab 4.2.5 + pypdf 5.0.1
+  - `.env` append `VOX_COACH_HMAC_SECRET=<random 32 url-safe>` + `VOX_COACH_SONNET_API_KEY=<key>` (pipe via stdin, sem expor em command line)
+  - `systemctl restart voxprobabilis` → active 140 MB, 2 workers up, clean shutdown→restart logged
+
+- Smoke prod via Cloudflare (12/12 verde):
+
+| Path | Status |
+|---|---|
+| `/coach` | 200 (dashboard) |
+| `/coach/terms.pdf` | 200 application/pdf 5188 bytes |
+| `/coach/consent-template.pdf` | 200 |
+| `/coach/static/{style.css,dashboard.js,recorder.js}` | 200 |
+| `/api/coach/quota` (no cookie) | 401 COACH_NO_COOKIE ✓ |
+| `/` `/app` `/coach/terms` `/api/health` `/privacy` | 200 (regression v0.1 + LANDING) |
+
+- Coach quota endpoint corretamente exige cookie (401 esperado sem auth)
+- /api/health JSON `{"status":"ok","version":"0.1.0"}` — backend vivo
+- Hot fix CLI cwd: `cd /opt/voxprobabilis/backend && set -a; source .env; set +a; sudo -u vox -E python -m app.coach.cli ...` (systemd EnvironmentFile só aplica via systemd-started processes)
+
+**Ativação Faustão (sfaustodev@gmail.com):**
+- User ID: `usr_Xe1YvJemmYNS9_k0wdUFMg`
+- Tier: `FREE_TRIAL` (1 sessão lifetime, 0 reports LLM — template fallback)
+- Tier expires: 2026-06-16 03:49 UTC
+- Activation URL (single-use, 7d TTL): `https://voxprobabilis.com/coach/activate?token=ScUA4AI30FkzmlqcO2jPts-iMqGTEYca`
+- Token expires: 2026-05-24 03:49 UTC
+
+**Security pós-deploy:**
+- API key Anthropic exposta no chat transcript — Faustão deve rotacionar em console.anthropic.com (revoke + create new + scp pra prod .env)
+- `.env` mode 0600 + owner vox:vox confirmado
+- Cookie HMAC, HttpOnly, SameSite=lax, Max-Age 30d
+- iframe sandbox no report HTML
+
+**In flight:**
+- Faustão clica activation URL → cookie set → dashboard renderiza tier FREE_TRIAL
+- Faustão testa sessão real (precisa Chrome/Firefox/Edge desktop + mic permission)
+- Se passar, manda URL pro adv amigo (Faustão decide quando — atualmente ativou só pra ele testar primeiro)
+
+**Blocked:**
+- Per rule #13: VOX-COACH-B status `In Review` até Faustão escrever "testei tudo passou" / "OK fechar VOX-COACH-B" pós teste browser real
+
+**Files changed (this session, post-merge):**
+- VPS-side: `/opt/voxprobabilis/.env` (+ 2 vars), `/opt/voxprobabilis/.env.bak.20260517-034647`, deps instaladas
+- Local: este commit (DIARY + JIRA close-out)
+
+**Next session should start with:**
+1. Aguardar Faustão browser test
+2. Se passar: VOX-COACH-B → Done em JIRA + entry close em DIARY
+3. Se quebrar: debug específico, hotfix in-branch + PR pequeno + redeploy
+4. Próximo sprint candidato: **VOX-COACH-C** (Cofre T2+ features: clients persistence + trajetória + diff + brief Opus) OU **VOX-COACH-D** (Lemon Squeezy/Stripe checkout)
+
+---
+
 ## 2026-05-17 — VOX-COACH-B Phases B.2 + B.3 + B.4 (local) COMPLETE
 
 **Tickets touched:** `VOX-COACH-B`
