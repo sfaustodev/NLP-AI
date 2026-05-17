@@ -67,9 +67,9 @@ def test_sniff_format_rejects_short() -> None:
 
 
 def test_sniff_format_webm() -> None:
-    """WEBM/EBML header — what MediaRecorder emits from the browser (Coach)."""
-    # EBML signature + enough trailing bytes to clear the 12-byte minimum.
-    head = b"\x1a\x45\xdf\xa3" + b"\x00" * 12
+    """WEBM/EBML header — requires EBML magic AND a 'webm' DocType marker
+    in the first 64 bytes (rules out other Matroska variants like .mkv)."""
+    head = b"\x1a\x45\xdf\xa3" + b"\x00" * 8 + b"webm" + b"\x00" * 48
     assert sniff_format(head) == "webm"
 
 
@@ -78,3 +78,32 @@ def test_sniff_format_ogg_opus() -> None:
     Some non-Chromium browsers may emit audio/ogg;codecs=opus from MediaRecorder."""
     head = b"OggS" + b"\x00" * 12
     assert sniff_format(head) == "ogg"
+
+
+def test_sniff_format_rejects_riff_non_wave() -> None:
+    """RIFF container without WAVE word (e.g. AVI/WebP/ANI) must NOT be
+    accepted as wav. Closes a pre-existing classification gap from when
+    _MAGIC['wav'] = (b'RIFF', 0) — any RIFF was falling through to wav."""
+    avi_like = b"RIFF" + b"\x00\x00\x00\x00" + b"AVI " + b"\x00" * 8
+    with pytest.raises(VoxError) as ei:
+        sniff_format(avi_like)
+    assert ei.value.code == "AUDIO_UNSUPPORTED_FORMAT"
+
+
+def test_sniff_format_rejects_ebml_without_webm_doctype() -> None:
+    """EBML magic + non-webm DocType (e.g. plain .mkv with video) must NOT
+    be classified as webm — defense against feeding arbitrary Matroska
+    payload to ffmpeg from a Coach upload."""
+    mkv_like = b"\x1a\x45\xdf\xa3" + b"\x00" * 4 + b"matroska" + b"\x00" * 48
+    with pytest.raises(VoxError) as ei:
+        sniff_format(mkv_like)
+    assert ei.value.code == "AUDIO_UNSUPPORTED_FORMAT"
+
+
+def test_sniff_format_truncated_rejected() -> None:
+    """Any input shorter than 12 bytes (incl. truncated EBML mid-header)
+    must reject with UNSUPPORTED_FORMAT before any further inspection."""
+    for short in (b"", b"\x1a\x45", b"\x1a\x45\xdf\xa3", b"RIFF"):
+        with pytest.raises(VoxError) as ei:
+            sniff_format(short)
+        assert ei.value.code == "AUDIO_UNSUPPORTED_FORMAT"
