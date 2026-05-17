@@ -26,7 +26,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
@@ -35,6 +35,12 @@ from .api import calibrate as calibrate_api
 from .api import health as health_api
 from .api import metrics as metrics_api
 from .api import session as session_api
+from .coach import auth as coach_auth
+from .coach import users as coach_users
+from .coach.middleware import COACH_COOKIE_NAME
+from .coach.pdf import consent as coach_pdf_consent
+from .coach.pdf import terms as coach_pdf_terms
+from .coach.routes import router as coach_router
 from .config import settings
 from .db import apply_migrations
 from .errors import VoxError
@@ -148,6 +154,52 @@ def _mount_static(app: FastAPI) -> None:
     def _academic_terms():
         return _serve(marketing_root / "academic-terms.html", "academic-terms.html")
 
+    # ---- Coach (VOX-COACH-B): dashboard + session view + PDFs + activation
+    @app.api_route("/coach", methods=["GET", "HEAD"], include_in_schema=False)
+    def _coach_dashboard():
+        return _serve(marketing_root / "coach" / "index.html", "coach/index.html")
+
+    @app.api_route("/coach/session/{session_token}", methods=["GET", "HEAD"],
+                   include_in_schema=False)
+    def _coach_session_view(session_token: str):
+        # session_token validated client-side via the /api/coach/session/{token}
+        # polling call; this route just serves the static SPA shell.
+        return _serve(marketing_root / "coach" / "session.html",
+                      "coach/session.html")
+
+    @app.api_route("/coach/terms.pdf", methods=["GET", "HEAD"],
+                   include_in_schema=False)
+    def _coach_terms_pdf():
+        pdf_bytes = coach_pdf_terms.generate_terms_pdf()
+        return Response(
+            content=pdf_bytes, media_type="application/pdf",
+            headers={"Content-Disposition": 'inline; filename="coach-terms.pdf"'},
+        )
+
+    @app.api_route("/coach/consent-template.pdf", methods=["GET", "HEAD"],
+                   include_in_schema=False)
+    def _coach_consent_pdf():
+        pdf_bytes = coach_pdf_consent.generate_consent_pdf()
+        return Response(
+            content=pdf_bytes, media_type="application/pdf",
+            headers={"Content-Disposition":
+                     'inline; filename="coach-consent-template.pdf"'},
+        )
+
+    @app.get("/coach/activate", include_in_schema=False)
+    def _coach_activate(token: str):
+        """Consume activation_token → set HMAC lawyer cookie → redirect /coach."""
+        user = coach_users.consume_activation_token(token)
+        cookie_token = coach_auth.gen_lawyer_cookie_token(user.id)
+        response = RedirectResponse(url="/coach", status_code=303)
+        response.set_cookie(
+            key=COACH_COOKIE_NAME, value=cookie_token,
+            max_age=coach_auth.LAWYER_COOKIE_TTL_SECONDS,
+            httponly=True, secure=settings.cookie_secure, samesite="lax",
+            path="/",
+        )
+        return response
+
     if static_root.is_dir():
         app.mount(
             "/assets",
@@ -160,6 +212,14 @@ def _mount_static(app: FastAPI) -> None:
             "/m",
             StaticFiles(directory=marketing_root, check_dir=False),
             name="marketing",
+        )
+
+    coach_static_root = marketing_root / "coach" / "static"
+    if coach_static_root.is_dir():
+        app.mount(
+            "/coach/static",
+            StaticFiles(directory=coach_static_root, check_dir=False),
+            name="coach_static",
         )
 
 
@@ -186,6 +246,7 @@ def create_app() -> FastAPI:
     app.include_router(calibrate_api.router)
     app.include_router(analyze_api.router)
     app.include_router(metrics_api.router)
+    app.include_router(coach_router)
 
     _mount_static(app)
 
