@@ -8,43 +8,7 @@
 
 ## Open questions
 
-> Q-01..Q-05 já foram movidas pra Resolved (probe SSH 2026-05-10). Restam apenas Q-06, Q-07, Q-08 (todas low-priority, herdadas de VOX-DEPLOY-A).
-
----
-
-### Q-06 · Email forwarding `contact@voxprobabilis.com` · raised 2026-05-09 · context: VOX-DEPLOY-A
-
-**Why I'm asking:** DEPLOY.md §3.1 + §9 (LGPD) + §10 (Terms) referenciam esse endereço. Se não configurar no Porkbun, o e-mail bate em vazio e o requisito LGPD vira só fachada (você não recebe acionamento de titular).
-
-**Tentative:** recomendado fortemente. 2 min no Porkbun. Forward pro seu pessoal.
-
-**Ask:** quer que eu te dê o passo-a-passo? Se sim, pode ir lá no Porkbun → voxprobabilis.com → Email Forwarding e cria `contact@` → seu email pessoal. Salva. Pronto.
-
----
-
-### Q-08 · Mantive wiring inline em `index.html` em vez de extrair pra `static/wire.js` · raised 2026-05-09 · context: VOX-DEPLOY-A
-
-**Why I'm asking:** DEPLOY.md §5.2 manda *literalmente* "implement this patch in a separate file `static/wire.js`". Mas o `index.html` que você já tinha tem `apiCalibrate`/`apiAnalyze` inline e o dispatcher `data-action`. A implementação que o DEPLOY descreve (`runStep(N)` + `runAnalysis()`) **não existe** — DEPLOY foi escrito antes do HTML maturar.
-
-**Que fiz:** flipei `VOX_USE_MOCK = false` e deletei o bloco `window.VOX_MOCK` (~108 linhas). Resultado: backend real bate em `/api/calibrate` e `/api/analyze`, comportamento idêntico ao spec, diff mínimo.
-
-**Tradeoff:**
-- (a) Inline (atual): 1 arquivo HTML, fácil de inspecionar; cache-bust ao editar HTML invalida JS junto.
-- (b) Extrair pra `static/wire.js` per literal §5.2: cache separado pro JS (HTML pode mudar sem invalidar JS no Cloudflare CDN), mas exige mover ~150 linhas (state, $/$$, go, painters, dispatcher) ou só a parte de `apiCalibrate`/`apiAnalyze` (split artificial).
-
-**Tentative (já aplicado):** (a). Ganho de cache-isolation é teórico (HTML é dominado pelos painters, não pelo wiring; mudança no wiring é rara).
-
-**Ask:** OK manter inline ou você quer §5.2 ao pé da letra? Se quiser (b), me diz e extraio.
-
----
-
-### Q-07 · Smoke fixtures `audios_claude/{ai_truth,ai_uncertain,ai_lie}.wav` · raised 2026-05-09 · context: VOX-DEPLOY-A
-
-**Why I'm asking:** DEPLOY.md §1 cita esses três WAVs como fixtures de regressão. Não achei em `backend/tests/` nem `landing_page/samples/`. Decide se smoke pós-deploy (§10 curl 6 e 7) usa eles ou usa as suas opus locais.
-
-**Tentative:** smoke pós-deploy roda da sua máquina, com seus opus de calibração. Os WAVs são opcionais.
-
-**Ask:** onde estão? você quer commitar pro repo (com risco de PII embora seja sua voz só) ou deixa local?
+> Todas resolvidas 2026-05-16 com inicio VOX-COACH-B. Fila vazia.
 
 ---
 
@@ -86,3 +50,22 @@
 **Asked:** Local code (Phase A) em paralelo com sua prep Cloudflare/VPS (Phase B), ou serial?
 **Answer (from human):** Parallel.
 **Followed-up in:** SPRINT §1.
+
+### Q-06 · Email forwarding `contact@voxprobabilis.com` · raised 2026-05-09 · resolved 2026-05-16
+
+**Asked:** Configurar forwarding no Porkbun pra LGPD não virar fachada?
+**Answer (from human + dig verify):** Faustão configurou no Porkbun. `dig +short MX voxprobabilis.com` confirma: `10 fwd1.porkbun.com / 20 fwd2.porkbun.com` + SPF record `v=spf1 include:_spf.porkbun.com ~all`. Email forwarding ATIVO.
+**Followed-up in:** sem mudança código — verificação via dig basta. Endereço `contact@voxprobabilis.com` agora aceita email LGPD.
+
+### Q-07 · Smoke fixtures `audios_claude/{ai_truth,ai_uncertain,ai_lie}.wav` · raised 2026-05-09 · resolved 2026-05-16
+
+**Asked:** Onde estão? commit pro repo ou deixa local?
+**Answer (from human + local find):** Faustão disse "estão na pasta NLP-AI". `find` confirma: `landing_page/samples/audios_claude/{ai_truth,ai_lie,ai_uncertain}.wav` existem. Ainda untracked no git (privacidade).
+**Followed-up in:** path documentado. Coach (VOX-COACH-B) usa esses fixtures pros tests de smoke flow (calibrate→response). Mantém untracked por ora (risco PII embora seja voz Faustão only).
+
+### Q-08 · wire.js inline vs extract · raised 2026-05-09 · resolved 2026-05-16
+
+**Asked:** OK manter inline ou extrair pra static/wire.js per literal DEPLOY §5.2?
+**Answer (from human):** "cara nem sei o que é isso confio em vc pra decidir".
+**Decision (agent):** Manter inline (já é o estado atual). Ganho cache-isolation teórico não justifica refactor ~150 LOC + risco regressão. Se mudar wire em sprint futuro + cache realmente perceptível, considera split então.
+**Followed-up in:** sem mudança código — `landing_page/index.html` v0.1 mantém wiring inline.

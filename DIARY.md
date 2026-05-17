@@ -4,6 +4,209 @@
 
 ---
 
+## 2026-05-17 — VOX-COACH-B Phases B.2 + B.3 + B.4 (local) COMPLETE
+
+**Tickets touched:** `VOX-COACH-B`
+
+**Done (B.2 — API + LLM + PDFs, 4 commits):**
+
+- `04960bb` feat: Sonnet 4.6 generator + template fallback (FREE_TRIAL path) + 9 tests. Retry 3× exponential backoff em SDK errors. Anthropic SDK lazy-imported. HTML escape em session_name.
+- `4703954` feat: reportlab PDFs — Terms (Art. 1º-8º verbatim SPEC §8.1) + Consent template (signature lines + LGPD) + Session Report (matplotlib cartesian PNG embedded) + 11 tests
+- `d1fd054` feat: 8 endpoints `/api/coach/*` + 6 aux `/coach/*` routes wired em main.py (dashboard, session view, terms.pdf, consent-template.pdf, activate, /coach/static mount conditional). Plus `coach/middleware.py` (Depends helpers) + `coach/responses.py` (response CRUD module)
+- `13df075` test: integration tests Coach routes + auth + activation + PDFs
+
+**Done (B.3 — frontend, 1 commit):**
+
+- `a8e4da4` feat: dashboard + live session view + 5 JS modules
+  - `coach/index.html` — dashboard (quota panel + nova sessao form + PDFs links)
+  - `coach/session.html` — live view (mic permission + calibrate + practice panels com cartesian + history + report)
+  - `coach/static/style.css` — paleta Vox completa, tier badges colored, mic dots, history rows, session grid responsivo
+  - `coach/static/dashboard.js` — DOM construction explicito (sem innerHTML em server data, security hook trippado e fixed)
+  - `coach/static/session.js` — state machine FE + polling 2s. Report HTML renderizado em `<iframe sandbox="">` pra bloquear XSS de LLM-injected scripts
+  - `coach/static/cartesian.js` — SVG widget (init/addPoint/clear) com quadrant labels + color mapping
+  - `coach/static/recorder.js` — MediaRecorder wrapper, Safari detect → blocked, Opus webm preferido + auto-stop timeout
+  - `marketing/index.html` — Coach tab "Trial grátis" CTA + FREE_TRIAL pricing card "Começar grátis" → `/coach` (era `#` placeholder); tiers pagos mantém `#` per SPRINT §0 #6
+
+**Done (B.4 — CLI + smoke, 1 commit):**
+
+- `c1687ce` feat: tier-activation CLI + 7 tests
+  - `python -m app.coach.cli upgrade --email X --tier Y` → cria/atualiza user + imprime activation URL (single-use 7d TTL)
+  - `list-users` → tabela formatada
+  - `revoke --email X` → soft-delete LGPD (email tombstoned)
+  - VoxError handler exit 2 com error code + hint em stderr
+
+**Smoke local end-to-end (sem audio — llvmlite py3.13 ABI issue local; prod py3.12 funciona):**
+
+| Step | Esperado | Resultado |
+|---|---|---|
+| `cli upgrade --email --tier` | activation URL impressa | ✓ token 32-char url-safe |
+| `GET /coach/activate?token=X` | 303 redirect /coach + Set-Cookie HMAC | ✓ `set-cookie: coach_session=...; HttpOnly; SameSite=lax; Max-Age=2592000` |
+| `GET /api/coach/quota` (cookie) | JSON tier + sessions_used | ✓ FREE_TRIAL + 0/0 |
+| `POST /api/coach/session/create` | session_token + state CREATED | ✓ token 138 chars |
+| `GET /api/coach/session/{token}` | session state JSON | ✓ baseline_established false |
+| 2ª `POST create` (quota=1) | 402 COACH_QUOTA_EXCEEDED | ✓ "1/1 used on Trial" |
+| `POST /end` sem calibrate | 400 COACH_INVALID_STATE_FOR_ACTION | ✓ "Cannot end session in state CREATED" |
+
+**Tests pytest local:** 172+ verde, 5 falhas pré-existentes audio (`OSError: libllvmlite.dylib`, llvmlite ABI py3.13 — prod py3.12 não afeta, DIARY 2026-05-16 entry anterior já documenta).
+
+**Security:**
+- HMAC kind separation testada (session token ≠ lawyer cookie mesmo com sig válida)
+- HTML escape em session_name no template fallback
+- `iframe sandbox=""` no report.html (zero JS, zero forms, zero same-origin) bloqueia LLM injection
+- DOM construction explicito em dashboard.js + session.js (security hook satisfeito post-rewrite)
+- Cookie HttpOnly + SameSite=lax + Max-Age 30d (path /)
+
+**Files changed (this session):**
+- `backend/app/coach/{reports/,pdf/,routes.py,middleware.py,responses.py,cli.py}` (novos)
+- `backend/app/main.py` (8 endpoints router + 6 aux routes + activate + /coach/static mount)
+- `backend/requirements.txt` (+pypdf==5.0.1)
+- `backend/tests/test_coach_{reports,pdf,routes,cli}.py` (novos)
+- `landing_page/marketing/coach/{index.html,session.html,static/*}` (7 files novos)
+- `landing_page/marketing/index.html` (2 CTAs Coach apontam /coach)
+
+**In flight:**
+- B.4.3 PR final + merge master (este commit + push branch + gh pr merge)
+- B.4.4 súplica prod + deploy + ativa adv (aguarda Faustão autorização + Anthropic API key)
+
+**Blocked:**
+- Anthropic API key Faustão gerar antes deploy (template fallback funciona sem)
+- Súplica prod escrita rule #16D antes SSH (formato apresentado abaixo)
+
+**Não-decisões logadas (discipline §9):**
+- `coach/responses.py` novo module pra CRUD respostas separado de routes (clean architecture, decouple)
+- `iframe sandbox=""` pro report HTML (decisão segurança vs DOMPurify dep)
+- Smoke audio skipped local (llvmlite) — confiança em prod py3.12 historic
+- `pypdf==5.0.1` add deps (test-only mas pode reusar em VOX-COACH-C)
+
+**Next session should start with:**
+1. Push branch feat/vox-coach-b
+2. Open PR + merge master (preserve atomic commits via --merge)
+3. Apresentar súplica produção formato rule #16D
+4. Após autorização: SSH prod, git pull, append .env (VOX_COACH_HMAC_SECRET + VOX_COACH_SONNET_API_KEY), systemctl restart
+5. Smoke prod 8 novos endpoints + regression v0.1+LANDING
+6. CLI activate Faustão's adv friend + Faustão envia URL
+7. Aguarda "testei tudo passou" pra fechar VOX-COACH-B
+
+---
+
+## 2026-05-16 — VOX-COACH-B Phase B.1 backend skeleton COMPLETE
+
+**Tickets touched:** `VOX-COACH-B`
+
+**Done (Phase B.1, 9 commits atômicos):**
+
+- `c371d1c` docs: sacred files start sprint + HUMAN cleanup
+- `b5237c3` chore: add anthropic + reportlab + matplotlib deps (pip install via `--only-binary=:all:`; scipy 1.13.1 rebuild failed py3.13 mas já estava em 1.17.1 pré-existente)
+- `6322e61` feat: migrations 007/008/009 + coach pkg init
+- `1435f22` feat: session state machine + DB CRUD + **27 tests**
+- `4eb2d0c` feat: HMAC session_token + lawyer cookie + activation_token + **12 tests**
+- `356d54c` feat: mic quality (SNR + sr + centroid) + **24 tests**, LoadedAudio extended c/ original_sample_rate
+- `8961e49` feat: baseline + per-response feedback + **34 tests** (9 baseline + 25 feedback)
+- `426207d` feat: tier pricing + lawyer accounts CRUD + **23 tests** (4 tiers, quota gates, magic-link flow, LGPD soft-delete)
+
+**Tests:** **120 verde** em Coach total (acumulado durante B.1). Suite inteira passa exceto 10 falhas pré-existentes audio (llvmlite ABI py3.13 local, não relacionadas).
+
+**Files changed (B.1 só):**
+- `backend/requirements.txt` (+3 deps)
+- `backend/.env.example` (+8 vars Coach)
+- `backend/app/config.py` (+7 Settings fields)
+- `backend/app/audio/load.py` (LoadedAudio.original_sample_rate)
+- `backend/app/coach/` (novo dir, 7 modules: __init__/session/auth/mic_quality/baseline/feedback/pricing/users)
+- `backend/migrations/` (3 novas: 007/008/009)
+- `backend/tests/conftest.py` (tmp_db agora aplica apply_migrations automatico)
+- `backend/tests/test_coach_*.py` (6 novos files, 120 tests)
+- `JIRA.md` `DIARY.md` `HUMAN.md` (sprint start + Q-06/07/08 resolved)
+
+**Architecture decisions logadas:**
+- Feature extraction NÃO está em coach (reusa app.audio.features.extract_all do v0.1). Coach modules consomem feature dicts (testáveis sem librosa/numba).
+- HMAC SHA-256 com kind separation (session vs lawyer) — confused-deputy proteção
+- Pure numpy SNR + centroid em mic_quality (sem librosa dependency)
+- pricing.py 4 tiers definidos mas só FREE_TRIAL + TIER_1_MONTHLY são ativados em VOX-COACH-B; TIER_2/3 viram funcionais em VOX-COACH-C (Cofre features)
+- Soft-delete LGPD em sessions + users + responses (deleted_at coluna)
+
+**In flight:**
+- Phase B.2: routes (`/api/coach/*` 7 endpoints) + Sonnet LLM client + 3 PDFs reportlab — próxima sessão
+- Phase B.3: frontend (`/coach` dashboard + session view + MediaRecorder + polling) — próxima sessão
+- Phase B.4: CLI tier activation + smoke local + PR + súplica prod + deploy — próxima sessão
+- Anthropic API key: Faustão precisa gerar manual no console.anthropic.com antes Phase B.4
+
+**Blocked:**
+- Phase B.4 deploy prod aguarda Anthropic key + súplica autorização rule #16D
+- Audio integration tests (B.2 routes) vão falhar local por llvmlite — prod py3.12 funciona normal
+
+**Não-decisões logadas:**
+- Migration numbering: 007/008/009 reservados (002-006 gap deixado pra Academic futura)
+- Tombstone email pattern `deleted_<rand>@deleted.invalid` em soft_delete_user pra liberar email original
+- conftest tmp_db agora aplica migrations automaticamente — mudança backward-compat
+- pricing tiers em pricing.py com `claude-opus-4-7` model id (latest per knowledge cutoff Jan 2026)
+
+**Next session should start with:**
+1. B.2.9 `coach/routes.py` 7 endpoints FastAPI router (create/get/calibrate/response/end/report.html/report.pdf/quota) + wire em main.py
+2. B.2.11 `coach/reports/sonnet_standard.py` Anthropic SDK wrapper + mock test (env sem key → template fallback)
+3. B.2.12-14 `coach/pdf/{terms,consent,session_report}.py` reportlab generators + tests
+4. B.2 commit + test_coach_routes.py (integration FastAPI TestClient)
+5. B.3 frontend (`landing_page/marketing/coach/{index,session}.html` + `static/{recorder,session}.js`)
+6. B.4 `coach/cli.py` + local smoke uvicorn + PR + súplica + deploy
+
+---
+
+## 2026-05-16 — VOX-LANDING-A close + VOX-COACH-B start
+
+**Tickets touched:** `VOX-LANDING-A` (close), `VOX-COACH-B` (start)
+
+**VOX-LANDING-A close-out:**
+- Browser smoke via Playwright (Faustão delegou: "controla meu chrome e testa tudo q vc quiser"):
+  - `https://voxprobabilis.com/` → 3 tabs renderizam (Explorer/Academic/Coach), hero serif, crimson CTAs, paleta consistente
+  - Click Coach tab → "Treine seu cliente com indicador objetivo" + framing Use/Não use 2-col
+  - `https://voxprobabilis.com/coach/terms` → Art. 1º-8º article-numbered, card crimson Limitação Responsabilidade, Foro Porto Seguro
+  - `https://voxprobabilis.com/terms` → hub 2 cards Coach + Academic
+  - `https://voxprobabilis.com/app` → v0.1 ferramenta intacta (header "Vox · Probabilis V0.1", AGI Logos Probabilis hero, BEGIN THE RITUAL CTA)
+- 5/5 screenshots gravados em `/Users/peluche/Projects/NLP-AI/vox-{home,coach,coach-terms,terms-hub,app}.png` (untracked, gitignore-worthy)
+- Console warning detectado: CSP `script-src 'self' 'unsafe-inline'` bloqueia Cloudflare beacon `static.cloudflareinsights.com/beacon.min.js` → Web Analytics nunca rodou. **PRÉ-EXISTENTE do v0.1** (não regressão VOX-LANDING-A). Vou criar sub-ticket VOX-CSP-FIX separado.
+- VOX-LANDING-A status: 🟢 Done (agent-verified). Pending humano: mandar URL pro adv amigo (Faustão action, fora do ticket).
+
+**VOX-COACH-B start:**
+- Plan file aprovado pelo Faustão. Sprint plano: bare T1 (FREE_TRIAL + TIER_1_MONTHLY), sem Cofre (vai VOX-COACH-C), sem checkout (vai VOX-COACH-D).
+- Branch criada: `feat/vox-coach-b` (off `259fa22`).
+- Sacred files updated: JIRA novo bloco VOX-COACH-B Active + sub-checklist B.1-B.4. HUMAN.md: 3 perguntas pendentes resolvidas (Q-06 confirmado via dig MX, Q-07 path local achado, Q-08 inline mantido per delegação).
+- requirements.txt: +`anthropic==0.40.0`, +`reportlab==4.2.5`, +`matplotlib==3.9.2`. pip install pendente.
+
+**HUMAN.md cleanup:**
+- Q-06 RESOLVED: MX records `fwd1.porkbun.com / fwd2.porkbun.com` + SPF ativo. Faustão já tinha configurado, agente verificou via `dig`.
+- Q-07 RESOLVED: `landing_page/samples/audios_claude/{ai_truth,ai_lie,ai_uncertain}.wav` existem, untracked (privacidade Faustão voice).
+- Q-08 RESOLVED: "confio em vc pra decidir" → manter inline (estado atual, sem refactor).
+- Open queue agora vazia. VOX-COACH-B vai gerar Q-11/Q-12 se decisões surfáceis aparecerem (lawyer auth, real-time transport).
+
+**In flight:**
+- Phase B.1 (8 modules backend skeleton)
+- Decisões agente sem perguntar (per discipline §3, sem trigger HUMAN):
+  - Lawyer auth = magic-link via CLI (Faustão envia link ao adv que cria conta 1×, zero deps SMTP externos)
+  - Real-time transport = polling 1s (FastAPI sem WS nginx config nova, upgrade WS/SSE se medir >4s p95)
+  - Audio retention = 0s pós-extract per SPEC literal
+
+**Blocked:**
+- Phase B.4 step 24 (deploy prod): aguarda Anthropic API key Faustão gerar + Faustão "autorizo prod" string (rule global #16D)
+
+**Files changed (this session start):**
+- `HUMAN.md` (3 Qs movidas pra Resolved + bloco de housekeeping)
+- `JIRA.md` (close VOX-LANDING-A Done · agent-verified + open VOX-COACH-B Active)
+- `DIARY.md` (esta entry)
+- `backend/requirements.txt` (+3 deps Coach)
+
+**Tests:** Playwright browser smoke 5/5 verde (VOX-LANDING-A close). pytest Coach pendente (Phase B.1-B.4 vai gerar ~50 testes novos).
+
+**Next steps imediatos:**
+1. Commit sacred files + requirements (2 commits atômicos)
+2. `pip install -r backend/requirements.txt` (3 packages novos)
+3. Migrations 007/008/009 (Coach DB tables)
+4. Implementar B.1.3-B.1.8 modules + tests sequencial (1 commit por módulo)
+5. PARAR antes de B.2 se decisão auth surgir (default magic-link CLI)
+6. B.2-B.4 sequencial
+7. Súplica prod + deploy
+8. Faustão ativa adv via CLI + manda URL `/coach`
+
+---
+
 ## 2026-05-16 — VOX-LANDING-A Phase B · production deploy + smoke
 
 **Tickets touched:** `VOX-LANDING-A`
