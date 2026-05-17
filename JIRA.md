@@ -8,8 +8,13 @@
 ## Active
 
 ### VOX-COACH-B · Coach backend T1 bare (sem checkout)
-- **Status:** 🟡 Em desenvolvimento · Phase B.1 backend skeleton ✅ COMPLETE · B.2-B.4 próxima sessão
-- **Branch:** `feat/vox-coach-b` (10 commits pushed)
+- **Status:** 🟡 In Review · deploy prod 2026-05-17 03:48 UTC · aguardando Faustão browser test escrito (rule #13)
+- **Branch:** `feat/vox-coach-b` → merged via PR #3 em master `d1377d1` (17 commits atomic preservados)
+- **Live URL:** https://voxprobabilis.com/coach (dashboard) · `/coach/session/{token}` (live view)
+- **PR:** [NLP-AI#3](https://github.com/sfaustodev/NLP-AI/pull/3) · merged 2026-05-17 03:21 UTC
+- **Deploy prod:** HEAD `d1377d1` · PREV_SHA `f207038` (rollback anchor) · .env.bak.20260517-034647 · systemctl restart OK 140MB
+- **Smoke prod (via Cloudflare, 12/12 verde):** `/coach` `/coach/terms.pdf` `/coach/consent-template.pdf` `/coach/static/*` 200 · `/api/coach/quota` 401 sem cookie ✓ · regression `/` `/app` `/coach/terms` `/api/health` `/privacy` mantidos
+- **Faustão ativado:** `usr_Xe1YvJemmYNS9_k0wdUFMg` · FREE_TRIAL · expira 2026-06-16 · activation URL `https://voxprobabilis.com/coach/activate?token=ScUA4AI30FkzmlqcO2jPts-iMqGTEYca` (single-use, 7d TTL)
 - **Spec:** `landing_page/SPECS/SPEC_COACH.md` v0.1.1
 - **Goal:** advogado clica "Trial grátis" no /coach, faz sessão real (calibração + 3-5 respostas), recebe relatório Sonnet, baixa PDF. Sente o produto antes de pagar.
 - **Plan file:** `/Users/peluche/.claude/plans/pr-ximo-movimento-faust-o-sobe-snuggly-balloon.md` (VOX-COACH-B revision)
@@ -29,8 +34,10 @@
   - [x] B.3 frontend (`/coach` dashboard + session live view + MediaRecorder + polling 2s + CTA wiring)
   - [x] B.4.1 CLI tier activation + 7 tests verde
   - [x] B.4.2 smoke uvicorn local e2e (auth + quota + state machine + redirect + cookies) verde
-  - [ ] B.4.3 PR final + merge master (este commit)
-  - [ ] B.4.4 súplica prod + deploy + ativa adv
+  - [x] B.4.3 PR #3 merged master (17 commits atomic preservados)
+  - [x] B.4.4 súplica prod + deploy + smoke verde + Faustão ativado FREE_TRIAL
+  - [ ] Faustão browser test real + confirmação escrita "testei tudo passou"
+  - [ ] (futuro) Faustão envia URL adv amigo quando se sentir confortável
 - **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
 - **Scope OUT (pra VOX-COACH-C/D):** Cofre features (clients/trajectory/diff/brief/tags) · Opus reports · Lemon Squeezy/Stripe checkout · Safari/mobile
 - **Decisões agente sem perguntar:**
