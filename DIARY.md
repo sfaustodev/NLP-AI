@@ -4,6 +4,56 @@
 
 ---
 
+## 2026-05-17 — PR #9 deployed + Stripe key pre-staged prod .env
+
+**Tickets touched:** `VOX-COACH-MISC` (close), `VOX-COACH-D` (pre-stage), `HUMAN Q-11 Q-12`
+
+**Done:**
+
+- **PR #9 `cd97d98` deployed prod** 22:13 UTC. PREV_SHA `87be4e2` rollback anchor.
+  - `git pull` master (6 files / 205 ins / 13 del)
+  - `nginx -t` ok + `systemctl reload nginx` zero downtime (new voxupload location block pra Coach audio endpoints)
+  - `systemctl restart voxprobabilis` active (sniff_format hardening + WEBM DocType + log redux)
+  - Smoke regression 6/6 verde: `/` `/coach` `/coach/terms.pdf` `/api/health` `/privacy` `/app`
+
+- **Stripe restricted key pre-staged em prod `.env`** (22:13 UTC, Faustão "autorizo prod eu sei do risco"):
+  - `.env.bak.20260517-221343` backup criado
+  - `STRIPE_RESTRICTED_KEY=rk_live_...` appended via stdin pipe (sem exposição em command line)
+  - `chmod 600` + `chown vox:vox` mantidos
+  - Nenhum código lê variável atualmente — pre-stage pra VOX-COACH-D futuro
+  - Faustão pediu "anota qualquer lugar pra eu não esquecer" → também registrei em HUMAN.md Q-12
+
+**Security alerts em HUMAN.md (Q-11 + Q-12):**
+- Q-11: 2 chaves expostas no transcript Claude desta sessão (Anthropic + Stripe). Rotacionar ambas quando Faustão puder. Backup `.env.bak` preserva versão pré-Stripe.
+- Q-12: STRIPE_RESTRICTED_KEY pre-staged sem consumidor. Validar escopo restricted quando VOX-COACH-D bootstrap começar.
+
+**Sequência completa do dia (4 prod deploys):**
+1. PR #3 (VOX-COACH-B Coach T1) → `d1377d1` 03:48 UTC
+2. PR #6 (hotfix WEBM + race) → `7d4d1e4` 19:33 UTC  
+3. PR #8 (VOX-XSS-REPORT-HTML CSP) → `87be4e2` 21:32 UTC
+4. PR #9 (VOX-COACH-MISC sniff + nginx) → `cd97d98` 22:13 UTC
+
+Plus PR #4 e #7 docs close-out merged sem deploy.
+
+**Tests pytest local cumulativo:** ~190+ verde, 5 audio pré-existentes falhas (llvmlite py3.13). 4 deploys consecutivos sem regressão (smoke 6/6 cada).
+
+**In flight:**
+- Faustão hard-refresh + completar sessão real Coach (calibrate + responses + end + relatório template)
+- Confirmação escrita "testei tudo passou" pra fechar VOX-COACH-B (rule #13)
+- Rotacionar 2 keys expostas (Q-11)
+
+**Sub-tickets abertos (Codex P2 deferred):**
+- VOX-COACH-AUDIO-BOMB (ffprobe pre-decode duration)
+- VOX-COACH-IDEMPOTENCY (Idempotency-Key /response)
+- VOX-XSS-REPORT-HTML (Done ✓)
+
+**Próxima sessão candidata:**
+- Check status spawn tasks (fix/csp-cloudflare-beacon + c/adoring-darwin-* COACH-C plan)
+- VOX-COACH-AUDIO-BOMB se Faustão prioritizar
+- Atualizar chaves rotated em prod `.env`
+
+---
+
 ## 2026-05-17 — VOX-XSS-REPORT-HTML deployed + VOX-COACH-MISC batch P2/P3
 
 **Tickets touched:** `VOX-XSS-REPORT-HTML` (close), `VOX-COACH-MISC` (P2/P3 backlog)
