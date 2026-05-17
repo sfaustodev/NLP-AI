@@ -36,8 +36,25 @@
   - [x] B.4.2 smoke uvicorn local e2e (auth + quota + state machine + redirect + cookies) verde
   - [x] B.4.3 PR #3 merged master (17 commits atomic preservados)
   - [x] B.4.4 súplica prod + deploy + smoke verde + Faustão ativado FREE_TRIAL
-  - [ ] Faustão browser test real + confirmação escrita "testei tudo passou"
-  - [ ] (futuro) Faustão envia URL adv amigo quando se sentir confortável
+  - [x] Hotfix WEBM + auto-stop (PR #6 `7d4d1e4` merged + deployed 2026-05-17 19:33 UTC)
+  - [x] Codex cross-review xhigh (verdict Bloquear; P1 → sub-ticket VOX-XSS-REPORT-HTML)
+  - [ ] Faustão hard-refresh browser + completar sessão real (calibrate + responses + end + relatório template)
+  - [ ] Confirmação escrita Faustão pra fechar VOX-COACH-B
+  - [ ] (futuro) Faustão envia URL adv amigo
+
+---
+
+### VOX-XSS-REPORT-HTML · sanitize /report.html ou CSP específica
+- **Status:** 🔴 Aberto · descoberto via Codex cross-review do hotfix WEBM 2026-05-17
+- **Severity:** P1 — bloqueador antes de ativar TIER_1_MONTHLY pago (LLM reports ativos)
+- **Não-bloqueante agora:** FREE_TRIAL não usa Sonnet (template fallback) → XSS path inativo
+- **Vulnerabilidade:** `/api/coach/session/{token}/report.html` retorna HTML Sonnet via HTMLResponse fora do iframe sandbox da UI. CSP nginx `'self' 'unsafe-inline'` permite script execution. Prompt injection via `question_text` → XSS same-origin se adv abre URL direta (não via /coach/session/{token} UI)
+- **Fix candidatos:**
+  - (a) CSP header específica no endpoint: `Content-Security-Policy: sandbox; default-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'`
+  - (b) Sanitização server-side allowlist (bleach ou similar) antes de armazenar/servir
+  - (c) Renderizar só JSON com `report_text_safe` que UI injeta com textContent + estrutura própria
+- **Recomendação:** (a) + (c) defense-in-depth
+- **Blocked by:** decidir antes de T1 ativar; LLM reports só rodam T1+
 - **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
 - **Scope OUT (pra VOX-COACH-C/D):** Cofre features (clients/trajectory/diff/brief/tags) · Opus reports · Lemon Squeezy/Stripe checkout · Safari/mobile
 - **Decisões agente sem perguntar:**
