@@ -56,12 +56,15 @@ MAX_DURATION_S = 60.0
 MIN_VOICED_RATIO = 0.10  # reject silence / pure noise
 VOICE_SPLIT_TOP_DB = 30  # librosa.effects.split threshold (SPEC §7.1)
 
-# Magic-byte signatures for the six accepted formats.
+# Magic-byte signatures for the loop-based formats.
+# WAV is intentionally NOT here: it requires both "RIFF" + "WAVE" tags, and
+# is matched explicitly at the top of sniff_format. Including "RIFF" here
+# would let arbitrary RIFF containers (AVI, WebP, etc.) be misclassified
+# as wav and crash pydub downstream.
 # Order matters: MP4/M4A's 'ftyp' box lives at offset 4 so we test position.
-# WEBM/EBML is added for browser MediaRecorder output (Coach uses
+# WEBM/EBML is the format browser MediaRecorder produces (Coach uses
 # audio/webm;codecs=opus on Chrome/Firefox/Edge).
 _MAGIC: dict[str, tuple[bytes, int]] = {
-    "wav":  (b"RIFF", 0),                # then b"WAVE" at offset 8 — checked in sniff()
     "mp3":  (b"ID3",  0),                # ID3v2-tagged MP3
     "ogg":  (b"OggS", 0),
     "flac": (b"fLaC", 0),
@@ -80,17 +83,30 @@ class LoadedAudio:
 
 
 def sniff_format(head: bytes) -> str:
-    """Return a lowercase format tag or raise AUDIO_UNSUPPORTED_FORMAT."""
+    """Return a lowercase format tag or raise AUDIO_UNSUPPORTED_FORMAT.
+
+    Detection layers (in order):
+
+    1. WAV: requires both "RIFF" at offset 0 AND "WAVE" at offset 8 — rules
+       out other RIFF containers (AVI, WebP, ANI, ...).
+    2. Raw MP3 frame sync: 0xFF 0xE0..FF.
+    3. WEBM: EBML magic AND ``DocType`` substring "webm" anywhere in the
+       first 64 bytes. Without the DocType check, arbitrary Matroska
+       (video/.mkv) would pass and feed ffmpeg unexpected payload.
+    4. Other formats by their stable magic prefix in ``_MAGIC``.
+    """
     if len(head) < 12:
         raise_vox(AUDIO_UNSUPPORTED_FORMAT, "File is too small to identify.")
 
-    # WAV needs the extra 'WAVE' word to rule out other RIFF containers.
     if head[:4] == b"RIFF" and head[8:12] == b"WAVE":
         return "wav"
-    # Plain MP3 without ID3 starts with an MPEG frame sync 0xFF 0xE0..FF.
     if head[0] == 0xFF and (head[1] & 0xE0) == 0xE0:
         return "mp3"
+    if head[:4] == b"\x1a\x45\xdf\xa3" and b"webm" in head[:64]:
+        return "webm"
     for fmt, (sig, offset) in _MAGIC.items():
+        if fmt == "webm":
+            continue          # already handled above with DocType check
         if head[offset:offset + len(sig)] == sig:
             return fmt
     raise_vox(AUDIO_UNSUPPORTED_FORMAT)
@@ -143,7 +159,11 @@ def decode(raw: bytes) -> LoadedAudio:
             tmp.flush()
             segment = AudioSegment.from_file(tmp.name, format=fmt)
     except Exception as exc:
-        log.warning("pydub decode failed: %s", exc)
+        # Log only the exception class + format tag — never the tmp path or
+        # ffmpeg argv (which may include user-controlled filenames). The
+        # raw bytes are gone (NamedTemporaryFile auto-deletes on raise),
+        # but stderr captured by pydub can leak file paths.
+        log.warning("pydub_decode_failed format=%s exc=%s", fmt, type(exc).__name__)
         raise_vox(AUDIO_CORRUPT)
 
     # Truncate silently per SPEC §7.1.

@@ -4,6 +4,41 @@
 
 ---
 
+## 2026-05-17 — VOX-XSS-REPORT-HTML deployed + VOX-COACH-MISC batch P2/P3
+
+**Tickets touched:** `VOX-XSS-REPORT-HTML` (close), `VOX-COACH-MISC` (P2/P3 backlog)
+
+**Done:**
+
+- **VOX-XSS-REPORT-HTML** PR #8 `87be4e2` merged + deployed prod 2026-05-17 21:32 UTC. Per-response CSP `sandbox; default-src 'none'; script-src 'none'; ...` em `/api/coach/session/{token}/report.html` + X-Content-Type-Options nosniff + X-Frame-Options SAMEORIGIN + Referrer-Policy no-referrer + Cache-Control no-store. 2 tests novos (CSP directives + body verbatim inerte). Smoke 6/6 verde regression. **T1 paid agora safe ativar.**
+
+- **VOX-COACH-MISC batch P2/P3** (branch `fix/coach-codex-backlog-p2p3`, 2 commits):
+
+  - `42255a4` fix: sniff_format hardening
+    - **P2 RIFF-non-WAVE pre-existente bug**: `_MAGIC["wav"]=(b"RIFF",0)` permitia AVI/WebP/ANI cair como wav. Removido; wav exige RIFF+WAVE no check explícito (já existia, gap era no fallback loop).
+    - **P2 WEBM DocType check**: EBML magic sozinho aceitava .mkv. Agora exige substring "webm" nos primeiros 64 bytes — fecha vetor Matroska arbitrário pro ffmpeg.
+    - **P3 hint** `AUDIO_UNSUPPORTED_FORMAT`: incluir WEBM.
+    - **P3 log hygiene**: `pydub_decode_failed format=X exc=ClassName` (era `pydub decode failed: %s` expondo stderr/path).
+    - **P3 tests**: 4 novos (RIFF-AVI rejected, EBML-non-webm rejected, EBML-with-webm-in-64 accepted, truncated cases). 7/7 sniff tests verde.
+
+  - `0b740c2` fix: nginx voxupload Coach regex
+    - **P2 rate limit gap**: Coach `/api/coach/session/<token>/{calibrate,response}` caía no `/api/` genérico (10 r/s) em vez do voxupload (2 r/s). Location block regex separado.
+
+**Codex P2 remaining (substantive, deferred sub-tickets):**
+
+- **VOX-COACH-AUDIO-BOMB** (P2): ffprobe pre-decode duration check. Atualmente decode acontece antes do truncamento de 60s — WEBM Opus 10MB pode expandir pra ~1.6GB PCM. Fix: subprocess.run ffprobe pra ler duration metadata; reject > 60s sem decodar. +50-100ms latência/request. Defesa contra decompression bomb.
+
+- **VOX-COACH-IDEMPOTENCY** (P2): `Idempotency-Key` header em `POST /api/coach/session/<token>/response`. Migration add unique constraint per (session_id, key); route checa header, retorna existing resp se hit. Defesa contra double-POST (race UI ou retry network). Schema change + ~50 LOC.
+
+**Tests local:** 7/7 sniff_format verde. test_coach_routes 18 passed + 2 skipped (pré-existentes).
+
+**Next:**
+- PR fix/coach-codex-backlog-p2p3 + merge + súplica prod deploy
+- Deploy: `git pull` + `nginx -t && systemctl reload nginx` (zero downtime nginx) + `systemctl restart voxprobabilis` (sniff fix backend)
+- Sub-tickets VOX-COACH-AUDIO-BOMB + VOX-COACH-IDEMPOTENCY ficam abertos pra próximo sprint
+
+---
+
 ## 2026-05-17 — VOX-COACH-B hotfix WEBM + auto-stop race + Codex cross-review
 
 **Tickets touched:** `VOX-COACH-B` (hotfix), `VOX-XSS-REPORT-HTML` (novo sub-ticket)
