@@ -305,6 +305,38 @@ def end_session(session_token: str) -> JSONResponse:
 
 # ------------------------------------------------------------------ /report.html
 
+# Tight CSP for the LLM-generated report endpoint. The Coach UI renders this
+# inside an iframe sandbox="" — but if a user opens the URL directly the
+# browser would otherwise honour the global nginx CSP ('self' 'unsafe-inline'),
+# which permits inline scripts. A prompt-injected Sonnet narrative could then
+# emit <script> and execute same-origin. We instead force a per-response CSP
+# that disables every active capability:
+#
+#   - ``sandbox`` puts the response in a unique origin (no cookies, no DOM
+#     access to the parent) — equivalent to ``<iframe sandbox="">``.
+#   - ``default-src 'none'`` blocks every fetch unless explicitly allowed.
+#   - ``script-src 'none'`` and ``style-src 'unsafe-inline'`` permit only the
+#     inline styles needed by the report templates; no JS can run.
+#   - ``base-uri`` / ``form-action`` ``'none'`` close the few CSP knobs that
+#     can still cause side-effects under sandbox.
+#
+# Complementary headers (``X-Content-Type-Options``, ``X-Frame-Options``,
+# ``Referrer-Policy``) make the endpoint hostile to clickjacking, MIME
+# sniffing, and referrer leakage even if the user navigates directly.
+_REPORT_CSP = (
+    "sandbox; default-src 'none'; script-src 'none'; "
+    "style-src 'unsafe-inline'; img-src data:; "
+    "base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+)
+_REPORT_SECURITY_HEADERS = {
+    "Content-Security-Policy": _REPORT_CSP,
+    "X-Content-Type-Options":  "nosniff",
+    "X-Frame-Options":         "SAMEORIGIN",
+    "Referrer-Policy":         "no-referrer",
+    "Cache-Control":           "private, no-store",
+}
+
+
 @router.get("/session/{session_token}/report.html")
 def get_report_html(session_token: str) -> HTMLResponse:
     sess = get_session_from_path_token(session_token)
@@ -315,7 +347,7 @@ def get_report_html(session_token: str) -> HTMLResponse:
             http_status=400,
         )
     html = sess.report_html or "<p>Relatório não gerado para esta sessão.</p>"
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers=_REPORT_SECURITY_HEADERS)
 
 
 # ------------------------------------------------------------------ /report.pdf
