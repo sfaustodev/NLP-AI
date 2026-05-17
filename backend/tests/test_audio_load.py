@@ -107,3 +107,50 @@ def test_sniff_format_truncated_rejected() -> None:
         with pytest.raises(VoxError) as ei:
             sniff_format(short)
         assert ei.value.code == "AUDIO_UNSUPPORTED_FORMAT"
+
+
+# ----------------------------------------------------------- AUDIO-BOMB defense
+
+def test_probe_duration_returns_none_for_missing_file() -> None:
+    """ffprobe on a nonexistent path → non-zero exit → returns None.
+    Caller treats None as 'unknown', proceeds to pydub decode."""
+    from app.audio.load import _probe_duration_seconds
+    assert _probe_duration_seconds("/tmp/definitely_does_not_exist_42") is None
+
+
+def test_decode_rejects_long_audio_pre_decode(wav_voiced: bytes, monkeypatch) -> None:
+    """VOX-COACH-AUDIO-BOMB: if ffprobe reports duration > MAX_DURATION_S
+    (with 5% tolerance), reject before pydub decodes. Without this, a small
+    compressed payload (Opus/AAC) could expand to >1GB PCM in memory."""
+    from app.audio import load as audio_load
+    monkeypatch.setattr(audio_load, "_probe_duration_seconds",
+                          lambda path, **_: 3600.0)  # 1h
+    with pytest.raises(VoxError) as ei:
+        audio_load.decode(wav_voiced)
+    assert ei.value.code == "AUDIO_TOO_LONG"
+    assert "3600" in ei.value.message
+    assert "60" in ei.value.message
+
+
+def test_decode_passes_when_probe_within_tolerance(wav_voiced: bytes, monkeypatch) -> None:
+    """A duration slightly over MAX (e.g. 62s due to encoder rounding) stays
+    within PROBE_TOLERANCE 5% and proceeds to decode. Decode itself then
+    truncates to MAX_DURATION_S per the existing post-decode path."""
+    from app.audio import load as audio_load
+    monkeypatch.setattr(audio_load, "_probe_duration_seconds",
+                          lambda path, **_: 62.0)
+    # 5s wav fixture decodes fine; the monkeypatched probe doesn't actually
+    # match the real duration, it just simulates the gate behaviour.
+    loaded = audio_load.decode(wav_voiced)
+    assert loaded.duration_s == pytest.approx(5.0, abs=0.1)
+
+
+def test_decode_proceeds_when_probe_returns_none(wav_voiced: bytes, monkeypatch) -> None:
+    """If ffprobe failed (None), caller should NOT reject — fall through to
+    pydub which is the existing path. Preserves backward-compat for formats
+    ffprobe doesn't introspect (e.g. raw PCM, exotic codecs)."""
+    from app.audio import load as audio_load
+    monkeypatch.setattr(audio_load, "_probe_duration_seconds",
+                          lambda path, **_: None)
+    loaded = audio_load.decode(wav_voiced)
+    assert loaded.duration_s == pytest.approx(5.0, abs=0.1)
