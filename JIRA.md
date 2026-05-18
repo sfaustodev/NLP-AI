@@ -8,7 +8,7 @@
 ## Active
 
 ### VOX-CSP-FIX · CSP whitelist Cloudflare Web Analytics beacon + hardening
-- **Status:** 🟢 Done · deploy prod 2026-05-18 00:57 UTC · beacon POST /cdn-cgi/rum 204 confirmado via Playwright
+- **Status:** ✅ Done · confirmado por humano 2026-05-18 ("fecha") · deploy prod 2026-05-18 00:57 UTC · beacon POST /cdn-cgi/rum 204 confirmado via Playwright
 - **Branch:** `fix/csp-cloudflare-beacon` → merged via PR #5 em master `faa9779` · branch deletada remote
 - **PR:** [NLP-AI#5](https://github.com/sfaustodev/NLP-AI/pull/5) · merged 2026-05-18 ~00:55 UTC
 - **Origem:** sub-ticket descoberto durante smoke VOX-LANDING-A (2026-05-16 22:55 UTC, Playwright). `static.cloudflareinsights.com/beacon.min.js` bloqueado por CSP `script-src 'self' 'unsafe-inline'`.
@@ -159,6 +159,15 @@
 ---
 
 ## Done
+
+### VOX-CSP-FIX · CSP Cloudflare beacon + hardening · closed 2026-05-18
+- Live: `script-src` += `https://static.cloudflareinsights.com` + `object-src 'none'` + `base-uri 'self'` + `media-src 'self' blob:` (PR #5).
+- Beacon `POST /cdn-cgi/rum → 204` confirmado via Playwright (proxied mode = same-origin).
+- Codex P2 aplicado in-PR (drop CF connect-src · add object-src/base-uri · atomic mv deploy).
+- Smoke prod 7/7 verde. Nginx backup `.bak.20260518-005717` retido pra rollback.
+- Confirmado por humano 2026-05-18 ("fecha").
+
+---
 
 ### VOX-DEPLOY-A · v0.1 production deploy · closed 2026-05-10
 - Live at https://voxprobabilis.com per DEPLOY.md §15 DoD.

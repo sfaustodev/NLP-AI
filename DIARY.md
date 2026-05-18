@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-05-18 — VOX-CSP-FIX CLOSED · confirmação humana "fecha"
+
+**Tickets touched:** `VOX-CSP-FIX` (close)
+
+**Done:**
+- Faustão escreveu "fecha" no chat (rule #13 string explícita) após smoke prod 7/7 verde + beacon CF POST 204 confirmado via Playwright.
+- JIRA.md: VOX-CSP-FIX migrado Active → Done · entry resumo na seção Done.
+- DIARY.md: este close-out append.
+- Backup nginx retido em prod (`/etc/nginx/sites-available/voxprobabilis.bak.20260518-005717`) — não deletar até janela de 48h passar.
+
+**Files changed:**
+- `JIRA.md` (status update + Done section entry)
+- `DIARY.md` (este append)
+
+**Next session:**
+- Browser test Faustão VOX-COACH-B ainda aberto (FREE_TRIAL ativado, aguarda string "testei tudo passou").
+- Próximo sprint candidate: VOX-COACH-C (Cofre T2+) ou VOX-COACH-D (Lemon/Stripe checkout).
+
+---
+
 ## 2026-05-18 — VOX-CSP-FIX CSP whitelist Cloudflare beacon + Codex P2 hardening · LIVE prod
 
 **Tickets touched:** `VOX-CSP-FIX`
