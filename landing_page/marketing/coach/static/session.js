@@ -149,10 +149,16 @@
     // input always pre-loads the question for the next pending answer.
     if (Array.isArray(s.planned_questions) && s.planned_questions.length > 0) {
       const nextIdx = (s.responses || []).length;
-      if (nextIdx < s.planned_questions.length
-          && els.questionText
-          && els.questionText.value.trim() === "") {
+      const inputEmpty = els.questionText && els.questionText.value.trim() === "";
+      if (nextIdx < s.planned_questions.length && inputEmpty) {
         els.questionText.value = s.planned_questions[nextIdx];
+        console.log("[coach] auto-filled question #" + (nextIdx + 1)
+                      + "/" + s.planned_questions.length + ": "
+                      + s.planned_questions[nextIdx]);
+      } else if (nextIdx >= s.planned_questions.length && inputEmpty) {
+        // Out of planned questions; clear placeholder + signal extras allowed.
+        els.questionText.placeholder =
+          "Pergunta extra (sem texto planejado)";
       }
     }
 
