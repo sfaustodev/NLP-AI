@@ -37,4 +37,20 @@
 
 **Next single-step:** checkout branch nova de origin/master, edit nginx.conf, commit atômico.
 
+**Status final (2026-05-18 00:58 UTC):** ✅ LIVE prod · PR #5 merged master `faa9779` · deploy SHA `8479bf3` · backup `.bak.20260518-005717` · smoke 7/7 verde · beacon POST /cdn-cgi/rum 204 ✓. Aguarda Faustão confirmar Cloudflare dashboard Analytics tráfego (~5 min).
+
+---
+
+## 2026-05-18 — docs/csp-fix-closeout — VOX-CSP-FIX close-out
+
+**Contexto:** Close-out sacred files pós VOX-CSP-FIX deploy verde. Trivial doc-only branch.
+
+**Escopo:**
+- Update JIRA.md: add VOX-CSP-FIX block Active (status Done · deploy details · smoke results)
+- Update DIARY.md: prepend entry 2026-05-18
+- Update PLAN.md: status final + new entry close-out
+- Bundle `.gitignore` mod (+`reports_fausto/`) que veio da skill codex-cross-review
+
+**Verificação:** PR merge fast (sem CI tests pra docs).
+
 ---

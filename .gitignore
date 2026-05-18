@@ -58,3 +58,10 @@ dist/
 build/
 *.tar.gz
 !nlp-ai-calibrated.tar.gz
+reports_fausto/
+
+# -----------------------------------------------------------
+# Agent ephemera
+# -----------------------------------------------------------
+.claude/
+.playwright-mcp/

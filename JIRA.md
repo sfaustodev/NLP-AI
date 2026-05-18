@@ -7,6 +7,37 @@
 
 ## Active
 
+### VOX-CSP-FIX · CSP whitelist Cloudflare Web Analytics beacon + hardening
+- **Status:** 🟢 Done · deploy prod 2026-05-18 00:57 UTC · beacon POST /cdn-cgi/rum 204 confirmado via Playwright
+- **Branch:** `fix/csp-cloudflare-beacon` → merged via PR #5 em master `faa9779` · branch deletada remote
+- **PR:** [NLP-AI#5](https://github.com/sfaustodev/NLP-AI/pull/5) · merged 2026-05-18 ~00:55 UTC
+- **Origem:** sub-ticket descoberto durante smoke VOX-LANDING-A (2026-05-16 22:55 UTC, Playwright). `static.cloudflareinsights.com/beacon.min.js` bloqueado por CSP `script-src 'self' 'unsafe-inline'`.
+- **Commits (3 atomic + merge):**
+  - `7d4d95c` fix: whitelist Cloudflare Web Analytics beacon in CSP (script-src + connect-src + media-src first pass)
+  - `4cf5985` docs: bootstrap PLAN.md as 5th sacred file
+  - `18b4333` fix: apply Codex P2 review — drop CF beacon connect-src + add object-src/base-uri
+  - `e924639` Merge origin/master (sync com `/api/coach/session` audio rate limit `0b740c2` + outros)
+- **CSP delta final (linha 100 nginx.conf):**
+  - `script-src` += `https://static.cloudflareinsights.com`
+  - `connect-src` mantido `'self'` apenas (Codex flagou: proxied mode = same-origin /cdn-cgi/rum)
+  - `media-src 'self' blob:` novo (futuro preview MediaRecorder em /coach)
+  - `object-src 'none'` novo (cheap hardening)
+  - `base-uri 'self'` novo (não herda de default-src, fecha vetor `<base>` injection)
+- **Deploy prod (00:57 UTC):**
+  - Rollback anchor SHA: `abe8bda` (pré-deploy) → NEW `8479bf3`
+  - nginx backup: `/etc/nginx/sites-available/voxprobabilis.bak.20260518-005717`
+  - Técnica: cp → `.new` → nginx -t → atomic `mv` → nginx -t → systemctl reload (zero-downtime, per Codex P3)
+  - Error log limpo pós-reload
+- **Smoke prod (00:58 UTC, 7/7 verde):**
+  - CSP header live com 11 directives ✓
+  - Regression: `/`, `/app`, `/coach`, `/privacy`, `/api/health`, `/coach/terms.pdf` → 200
+  - Playwright console: 0 errors, 0 warnings
+  - Network: `POST https://voxprobabilis.com/cdn-cgi/rum → 204` (beacon CF carregou + executou + POST same-origin OK)
+- **Codex cross-review:** verdict "Aprovar com ajustes" · 3 P2/P3 aplicados in-PR (drop CF connect-src · add object-src/base-uri · deploy atomic mv) · report em `reports_fausto/codex-pr-5-2026-05-17.md` (gitignored)
+- **Cloudflare Analytics:** deve começar registrar tráfego ~5 min após reload (esperar Faustão confirmar dashboard)
+
+---
+
 ### VOX-COACH-B · Coach backend T1 bare (sem checkout)
 - **Status:** 🟡 In Review · deploy prod 2026-05-17 03:48 UTC · aguardando Faustão browser test escrito (rule #13)
 - **Branch:** `feat/vox-coach-b` → merged via PR #3 em master `d1377d1` (17 commits atomic preservados)
