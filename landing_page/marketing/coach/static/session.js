@@ -142,6 +142,20 @@
       });
     }
 
+    // Auto-fill the question_text input with the next planned question
+    // (one was entered upfront on the dashboard's "Nova sessão" form).
+    // Fill ONLY when the input is empty — never clobber a manual edit.
+    // The planned-questions cursor advances with response count, so the
+    // input always pre-loads the question for the next pending answer.
+    if (Array.isArray(s.planned_questions) && s.planned_questions.length > 0) {
+      const nextIdx = (s.responses || []).length;
+      if (nextIdx < s.planned_questions.length
+          && els.questionText
+          && els.questionText.value.trim() === "") {
+        els.questionText.value = s.planned_questions[nextIdx];
+      }
+    }
+
     // Panel decisions.
     if (s.state === "ENDED") {
       stopPolling();
