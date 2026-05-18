@@ -135,6 +135,10 @@ def get_session(session_token: str) -> JSONResponse:
 
 
 def _session_public_payload(sess: cs.CoachSession) -> dict:
+    # Pull responses inline so the polling client gets the history list and
+    # the cartesian points without an extra round-trip per response. Cheap
+    # for our scale (< ~50 responses per session per SPEC §9 quota math).
+    resps = coach_responses.list_session_responses(sess.id)
     return {
         "session_id": sess.id,
         "session_name": sess.session_name,
@@ -145,6 +149,20 @@ def _session_public_payload(sess: cs.CoachSession) -> dict:
         "planned_questions": sess.planned_questions,
         "ended_at": sess.ended_at,
         "expires_at": sess.expires_at,
+        "responses": [
+            {
+                "id":                r.id,
+                "response_index":    r.response_index,
+                "question_text":     r.question_text,
+                "duration_s":        round(r.duration_s, 2),
+                "consistency_label": r.consistency_label,
+                "color":             r.color,
+                "cartesian_x":       round(r.cartesian_x, 3),
+                "cartesian_y":       round(r.cartesian_y, 3),
+                "narrative":         r.narrative,
+            }
+            for r in resps
+        ],
     }
 
 
@@ -198,7 +216,7 @@ async def calibrate_session(
 async def submit_response(
     session_token: str,
     audio: UploadFile = File(...),
-    question_text: str | None = Form(None),
+    question_text: str = Form(..., min_length=3, max_length=500),
 ) -> JSONResponse:
     sess = get_session_from_path_token(session_token)
     if sess.state not in (cs.SessionState.READY, cs.SessionState.IN_PRACTICE):
@@ -208,6 +226,19 @@ async def submit_response(
             http_status=400,
             hint="Calibrate the session first; or the session has already ended.",
         )
+
+    # Question text is required: empty/whitespace-only inputs would let the
+    # session history become a wall of anonymous blobs, defeating the purpose
+    # of cross-question comparison in the report.
+    q = (question_text or "").strip()
+    if len(q) < 3:
+        raise VoxError(
+            code="COACH_QUESTION_REQUIRED",
+            message="Provide the question you asked before submitting the response.",
+            http_status=400,
+            hint="Write at least the gist of the question (3+ chars) before recording.",
+        )
+    q = q[:500]
 
     raw = await audio.read()
     loaded = audio_load.decode(raw)
@@ -224,7 +255,7 @@ async def submit_response(
 
     inserted = coach_responses.insert_response(
         session_id=sess.id,
-        question_text=(question_text or "").strip()[:500] or None,
+        question_text=q,
         duration_s=float(loaded.duration_s),
         features=current,
         delta_pct=fb.delta_pct,
@@ -247,6 +278,50 @@ async def submit_response(
         "color": fb.color,
         "narrative": fb.narrative,
         "duration_s": round(loaded.duration_s, 2),
+    })
+
+
+# ------------------------------------------------------------------ /response/{id}
+
+@router.get("/session/{session_token}/response/{response_id}")
+def get_response_detail(session_token: str, response_id: str) -> JSONResponse:
+    """Full details of one response — used by the per-response detail page.
+
+    The response_id alone is opaque (the JS sees it only via the session
+    state poll), so we still gate access by the session_token: the response
+    must belong to the session the token represents.
+    """
+    sess = get_session_from_path_token(session_token)
+    try:
+        resp = coach_responses.get_response_by_id(response_id)
+    except VoxError:
+        raise VoxError(
+            code="COACH_RESPONSE_NOT_FOUND",
+            message="Response not found.",
+            http_status=404,
+        )
+    if resp.session_id != sess.id:
+        raise VoxError(
+            code="COACH_RESPONSE_NOT_FOUND",
+            message="Response not found in this session.",
+            http_status=404,
+            hint="response_id is scoped per session_token; verify URL.",
+        )
+    return JSONResponse({
+        "response_id":       resp.id,
+        "response_index":    resp.response_index,
+        "session_name":      sess.session_name,
+        "question_text":     resp.question_text,
+        "duration_s":        round(resp.duration_s, 2),
+        "features":          {k: round(v, 5) for k, v in resp.features.items()},
+        "delta_pct":         {k: round(v, 2) for k, v in resp.delta_pct.items()},
+        "cartesian":         {"x": round(resp.cartesian_x, 3),
+                              "y": round(resp.cartesian_y, 3)},
+        "consistency_label": resp.consistency_label,
+        "color":             resp.color,
+        "narrative":         resp.narrative,
+        "transcription":     None,    # VOX-COACH-TRANSCRIPTION (phase C) — pending OpenAI key
+        "created_at":        resp.created_at,
     })
 
 

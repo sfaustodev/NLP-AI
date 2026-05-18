@@ -286,6 +286,28 @@ a:hover { text-decoration-color: var(--crimson); }
   color: var(--muted);
   margin-bottom: 2px;
 }
+.history-text .history-question {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--bone);
+  margin: 2px 0 4px;
+  line-height: 1.35;
+}
+.history-row--link {
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+  padding-left: 6px;
+  padding-right: 6px;
+  border-radius: 4px;
+}
+.history-row--link:hover {
+  background: var(--ink-3);
+  cursor: pointer;
+}
+.history-row--link:hover .history-text .label { color: var(--crimson); }
 
 .report-frame {
   width: 100%;
