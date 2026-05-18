@@ -4,6 +4,86 @@
 
 ---
 
+## 2026-05-18 — VOX-CSP-FIX CSP whitelist Cloudflare beacon + Codex P2 hardening · LIVE prod
+
+**Tickets touched:** `VOX-CSP-FIX`
+
+**Done:**
+
+- Sub-ticket isolado descoberto smoke VOX-LANDING-A (2026-05-16 22:55 UTC Playwright). Cloudflare Web Analytics beacon `static.cloudflareinsights.com/beacon.min.js` bloqueado por CSP v0.1 `script-src 'self' 'unsafe-inline'`. Web Analytics ativado dashboard mas zero tráfego registrado.
+- Branch `fix/csp-cloudflare-beacon` saiu de `origin/master` (5d7c5af) — isolada do commit WEBM em flight (`e2fbf1a`).
+- 3 commits atomic + 1 merge:
+  - `7d4d95c` fix CSP first-pass (script-src + connect-src CF + media-src blob:)
+  - `4cf5985` docs bootstrap PLAN.md (5º sacred file per CLAUDE.md global rule #15)
+  - `18b4333` fix Codex P2: drop CF connect-src (proxied = same-origin /cdn-cgi/rum) + add object-src 'none' + base-uri 'self'
+  - `e924639` Merge origin/master (sync com `0b740c2` Coach audio rate limit + `b53cf0d` XSS CSP report + outros)
+
+**Pre-merge defenses (rule #20):**
+
+- pre-merge-coverage skip (config nginx, sem code path testável unit)
+- codex-cross-review xhigh effort · verdict "Aprovar com ajustes" · 3 P2/P3 acionáveis aplicados in-PR
+  - P2 #1: removido `connect-src https://cloudflareinsights.com` — Cloudflare proxied mode posta beacon same-origin `/cdn-cgi/rum`, host externo só é necessário em non-proxied setup. Fonte: Cloudflare docs "Data origin and collection"
+  - P2 #2: adicionado `object-src 'none'; base-uri 'self'` — `base-uri` não herda de `default-src`, sem isso `<base href="//atacante">` injetado reescreve URLs relativos
+  - P3: deploy procedure atomic mv (.new + nginx -t + mv) aplicado no momento do deploy
+- Report salvo: `reports_fausto/codex-pr-5-2026-05-17.md` (152k, gitignored)
+
+**Deploy prod (00:57 UTC):**
+
+- SSH `root@89.116.73.118` (auto-classifier exigiu autorização escrita explícita do Faustão — "prod atorizada" + user `juan-ssh` rejeitou publickey, switch pra `root@`)
+- Git ops todas via `sudo -u vox git ...` (root direto causa "dubious ownership" — `/opt/voxprobabilis` é vox-owned)
+- PREV_SHA `abe8bda` → NEW_SHA `8479bf3` (master também avançou PR #12 feat/coach-ux-v2 entre meu PR e deploy)
+- Nginx backup: `/etc/nginx/sites-available/voxprobabilis.bak.20260518-005717`
+- Técnica Codex P3: `cp → .new → nginx -t → atomic mv → nginx -t → systemctl reload`
+- nginx -t pre/post ambos OK, reload silenciosa, error log limpo
+
+**Smoke prod (00:58 UTC, 7/7 verde):**
+
+| Endpoint | Status |
+|---|---|
+| `/` | 200 |
+| `/app` | 200 |
+| `/coach` | 200 |
+| `/privacy` | 200 |
+| `/api/health` | 200 |
+| `/coach/terms.pdf` | 200 |
+| Playwright console | 0 errors, 0 warnings |
+| Network beacon | `POST /cdn-cgi/rum → 204` ✓ |
+
+CSP header live confirma 11 directives ativas (vs 8 anteriores). Cloudflare beacon carrega + executa + posta same-origin OK.
+
+**In flight:**
+
+- Aguardar Faustão confirmar Cloudflare dashboard Analytics começa registrar tráfego (~5 min após reload). Ticket pode fechar definitivo na próxima sessão.
+
+**Blocked:**
+
+- Nada — CSP fix self-contained, sem dependências externas pendentes.
+
+**Não-decisões logadas (discipline §9):**
+
+- `media-src 'self' blob:` adicionado defensive mesmo sem uso atual (recorder.js POSTa FormData direto, sem blob playback) — preparação pra preview de gravação Coach v0.2 sem nova rolagem CSP
+- Comment block CSP reescrito 2× pra rule #19: 1ª versão tinha "tighten in v0.2" (proibido), 2ª limpa só com justify técnico atemporal
+- Branch out de `origin/master` (não branch worktree atual) pra isolar do commit WEBM `e2fbf1a` pendente VOX-COACH-B
+- PLAN.md bootstrapped pela primeira vez no repo (5º sacred file global rule #15)
+- `reports_fausto/` adicionado ao `.gitignore` pela skill codex-cross-review
+
+**Files changed (this session):**
+
+- `backend/deploy/nginx.conf` (CSP header refactor)
+- `PLAN.md` (novo · bootstrap + entry VOX-CSP-FIX)
+- `.gitignore` (+`reports_fausto/`)
+- VPS-side: `/etc/nginx/sites-available/voxprobabilis` (cp) + `.bak.20260518-005717` (backup)
+- Local report: `reports_fausto/codex-pr-5-2026-05-17.md` (gitignored, 152k)
+
+**Next session should start with:**
+
+1. Faustão confirma Cloudflare dashboard Analytics tráfego (1ª pageview deve aparecer ~5 min pós reload)
+2. Se confirmado: VOX-CSP-FIX → fully closed (rule #13 — task fica `Done` definitivo)
+3. Continuar aguardando Faustão browser test VOX-COACH-B em FREE_TRIAL pra fechar aquele também
+4. Próximo sprint candidate: VOX-COACH-C (Cofre T2+ persistence) ou VOX-COACH-D (Lemon/Stripe checkout)
+
+---
+
 ## 2026-05-17 — PR #9 deployed + Stripe key pre-staged prod .env
 
 **Tickets touched:** `VOX-COACH-MISC` (close), `VOX-COACH-D` (pre-stage), `HUMAN Q-11 Q-12`
