@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Resposta — Vox Probabilis Coach</title>
+<meta name="description" content="Detalhe de uma resposta individual: transcrição, features, cartesian e leitura prática." />
+<meta name="theme-color" content="#0A0808" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/coach/static/style.css" />
+</head>
+<body>
+
+<header class="coach-header">
+  <div class="logo">~ Vox Probabilis <small>Coach</small></div>
+  <a class="btn secondary" id="back-link" href="/coach">← Voltar à sessão</a>
+</header>
+
+<main class="coach-wrap">
+  <h1 id="title">Resposta</h1>
+  <p class="sub" id="sub">Carregando…</p>
+
+  <div id="err" class="banner error hide"></div>
+
+  <div class="panel">
+    <div class="panel-title">Pergunta</div>
+    <p id="question-text" style="font-style: italic;">—</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Transcrição da resposta</div>
+    <p id="transcription-text" class="muted">Transcrição automática ainda não habilitada nesta sessão.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Leitura prática</div>
+    <p>
+      <span class="mic-indicator">
+        <span class="mic-dot" id="color-dot"></span>
+        <strong id="consistency-label">—</strong>
+      </span>
+    </p>
+    <p id="narrative-text">—</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Posição no cartesiano</div>
+    <svg id="cartesian-svg" viewBox="0 0 400 400" style="max-width: 400px;"></svg>
+    <p class="muted" style="font-size: 11px; font-family: var(--mono); margin-top: 4px;">
+      X = naturalidade (esquerda = mais controlada) · Y = tensão involuntária (cima = mais tensa)
+    </p>
+  </div>
+
+  <details class="panel">
+    <summary class="panel-title" style="cursor: pointer;">Features brutas (debug)</summary>
+    <pre id="features-pre" style="font-family: var(--mono); font-size: 11px; color: var(--bone-dim); white-space: pre-wrap; margin: 12px 0 0;">—</pre>
+  </details>
+</main>
+
+<script src="/coach/static/cartesian.js"></script>
+<script src="/coach/static/response.js"></script>
+</body>
+</html>

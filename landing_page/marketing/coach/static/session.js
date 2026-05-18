@@ -170,8 +170,14 @@
     const placeholder = els.history.querySelector(".muted");
     if (placeholder) { clearChildren(els.history); }
 
-    const row = document.createElement("div");
-    row.className = "history-row";
+    // Each row is a clickable <a> that opens the per-response detail page —
+    // gives the lawyer the full transcription + cartesian + features +
+    // narrative for that single answer instead of cramming everything into
+    // the live view sidebar.
+    const row = document.createElement("a");
+    row.className = "history-row history-row--link";
+    row.href = "/coach/session/" + encodeURIComponent(token)
+             + "/response/" + encodeURIComponent(resp.id);
 
     const dot = document.createElement("span");
     dot.className = "history-dot " + (resp.color || "GREEN");
@@ -186,8 +192,16 @@
                           " · " + (resp.consistency_label || "BASELINE");
     text.appendChild(label);
 
+    // Lead with the question so the lawyer scans by content, not by index.
+    if (resp.question_text) {
+      const q = document.createElement("span");
+      q.className = "history-question";
+      q.textContent = "“" + resp.question_text + "”";
+      text.appendChild(q);
+    }
+
     const body = document.createElement("span");
-    body.textContent = resp.narrative || "(sem narrativa)";
+    body.textContent = resp.narrative || "(sem leitura prática)";
     text.appendChild(body);
 
     row.appendChild(text);
@@ -328,6 +342,17 @@
   // -------- response flow (record + stop + auto-stop) --------
   els.responseRecordBtn.addEventListener("click", () => {
     hideBanner(els.responseError);
+    // Question text is required server-side now (VOX-COACH-UX-V2) —
+    // surface the validation upfront so the lawyer doesn't waste a 45s
+    // recording on a request that will 400 on submit.
+    const q = els.questionText.value.trim();
+    if (q.length < 3) {
+      showBanner(els.responseError,
+        "Digite a pergunta antes de gravar (mínimo 3 caracteres). "
+        + "Sem ela o relatório fica anônimo.", "warning");
+      els.questionText.focus();
+      return;
+    }
     try {
       window.CoachRecorder.startRecording({
         timeoutMs: 45000,

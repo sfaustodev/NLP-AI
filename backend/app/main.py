@@ -167,6 +167,15 @@ def _mount_static(app: FastAPI) -> None:
         return _serve(marketing_root / "coach" / "session.html",
                       "coach/session.html")
 
+    @app.api_route("/coach/session/{session_token}/response/{response_id}",
+                   methods=["GET", "HEAD"], include_in_schema=False)
+    def _coach_response_view(session_token: str, response_id: str):
+        # Static page; JS fetches /api/coach/session/<token>/response/<id> for
+        # the actual payload. Token + id validation lives server-side at the
+        # JSON endpoint, not in this static shell.
+        return _serve(marketing_root / "coach" / "response.html",
+                      "coach/response.html")
+
     @app.api_route("/coach/terms.pdf", methods=["GET", "HEAD"],
                    include_in_schema=False)
     def _coach_terms_pdf():
