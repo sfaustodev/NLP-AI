@@ -52,7 +52,7 @@ AUDIO_TOO_LONG = dict(code="AUDIO_TOO_LONG",
 
 AUDIO_UNSUPPORTED_FORMAT = dict(code="AUDIO_UNSUPPORTED_FORMAT",
                                 http_status=400,
-                                hint="Allowed formats: WAV, MP3, M4A, OGG, FLAC.")
+                                hint="Allowed formats: WAV, MP3, M4A, OGG, FLAC, WEBM.")
 
 AUDIO_CORRUPT = dict(code="AUDIO_CORRUPT",
                      http_status=400,

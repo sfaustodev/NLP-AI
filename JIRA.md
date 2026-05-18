@@ -36,8 +36,35 @@
   - [x] B.4.2 smoke uvicorn local e2e (auth + quota + state machine + redirect + cookies) verde
   - [x] B.4.3 PR #3 merged master (17 commits atomic preservados)
   - [x] B.4.4 súplica prod + deploy + smoke verde + Faustão ativado FREE_TRIAL
-  - [ ] Faustão browser test real + confirmação escrita "testei tudo passou"
-  - [ ] (futuro) Faustão envia URL adv amigo quando se sentir confortável
+  - [x] Hotfix WEBM + auto-stop (PR #6 `7d4d1e4` merged + deployed 2026-05-17 19:33 UTC)
+  - [x] Codex cross-review xhigh (verdict Bloquear; P1 → sub-ticket VOX-XSS-REPORT-HTML)
+  - [ ] Faustão hard-refresh browser + completar sessão real (calibrate + responses + end + relatório template)
+  - [ ] Confirmação escrita Faustão pra fechar VOX-COACH-B
+  - [ ] (futuro) Faustão envia URL adv amigo
+
+---
+
+### VOX-COACH-AUDIO-BOMB · ffprobe pre-decode duration check
+- **Status:** 🔴 Aberto · descoberto via Codex P2 do hotfix WEBM 2026-05-17
+- **Severity:** P2 — defense-in-depth bomb prevention
+- **Vulnerabilidade:** `load.py decode()` trunca duração APÓS pydub decode. WEBM Opus 10MB pode expandir pra ~1.6GB PCM in-memory antes do cap 60s. DoS via memory exhaustion.
+- **Fix:** subprocess.run `ffprobe -i tmp -show_format -of json` antes de `AudioSegment.from_file` pra ler duration metadata. Reject se > MAX_DURATION_S. +50-100ms latência/request.
+
+---
+
+### VOX-COACH-IDEMPOTENCY · Idempotency-Key /response
+- **Status:** 🔴 Aberto · descoberto via Codex P2 do hotfix WEBM 2026-05-17
+- **Severity:** P2 — race + retry safety
+- **Problema:** `POST /api/coach/session/<token>/response` cria nova resposta cada call. Double POST (UI race ou retry network) = 2 respostas duplicadas, infla cartesian + relatório.
+- **Fix:** Migration 010_coach_responses_idempotency.sql: add `idempotency_key TEXT` + UNIQUE(session_id, idempotency_key). Route extrai header `Idempotency-Key`; if exists retorna existing resp; else insert + retorna nova. +~50 LOC + 1 migration.
+
+---
+
+### VOX-XSS-REPORT-HTML · sanitize /report.html ou CSP específica
+- **Status:** 🟢 Done · PR #8 `87be4e2` deployed 2026-05-17 21:32 UTC
+- **Severity:** P1 — bloqueador antes de ativar TIER_1_MONTHLY pago (LLM reports ativos) → fechado
+- **Solution:** per-response CSP `sandbox; default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'` + X-Frame-Options SAMEORIGIN + Referrer-Policy no-referrer + Cache-Control no-store
+- **Tests:** 2 novos (CSP directives + body verbatim inerte), test_coach_routes 18 passed + 2 skipped
 - **Scope IN:** FREE_TRIAL + TIER_1_MONTHLY tiers · 7 endpoints `/api/coach/*` · Sonnet 4.6 reports · 3 PDFs reportlab · manual tier activation via CLI
 - **Scope OUT (pra VOX-COACH-C/D):** Cofre features (clients/trajectory/diff/brief/tags) · Opus reports · Lemon Squeezy/Stripe checkout · Safari/mobile
 - **Decisões agente sem perguntar:**

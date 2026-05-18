@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import io
 import logging
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,17 +54,30 @@ log = logging.getLogger("vox.audio.load")
 TARGET_SR = 16_000       # Hz — SPEC §7.1
 MIN_DURATION_S = 3.0
 MAX_DURATION_S = 60.0
+# 5% slack vs MAX_DURATION_S — some encoders report rounded-up duration that
+# AudioSegment then truncates cleanly; we only reject pre-decode when the
+# probed length exceeds the cap by enough to suggest abuse, not jitter.
+PROBE_TOLERANCE = 1.05
+# ffprobe must return within this many seconds; protects against a malformed
+# input that makes ffmpeg hang on parse.
+PROBE_TIMEOUT_S = 5.0
 MIN_VOICED_RATIO = 0.10  # reject silence / pure noise
 VOICE_SPLIT_TOP_DB = 30  # librosa.effects.split threshold (SPEC §7.1)
 
-# Magic-byte signatures for the five accepted formats.
+# Magic-byte signatures for the loop-based formats.
+# WAV is intentionally NOT here: it requires both "RIFF" + "WAVE" tags, and
+# is matched explicitly at the top of sniff_format. Including "RIFF" here
+# would let arbitrary RIFF containers (AVI, WebP, etc.) be misclassified
+# as wav and crash pydub downstream.
 # Order matters: MP4/M4A's 'ftyp' box lives at offset 4 so we test position.
+# WEBM/EBML is the format browser MediaRecorder produces (Coach uses
+# audio/webm;codecs=opus on Chrome/Firefox/Edge).
 _MAGIC: dict[str, tuple[bytes, int]] = {
-    "wav":  (b"RIFF", 0),   # then b"WAVE" at offset 8 — checked in sniff()
-    "mp3":  (b"ID3",  0),   # ID3v2-tagged MP3
+    "mp3":  (b"ID3",  0),                # ID3v2-tagged MP3
     "ogg":  (b"OggS", 0),
     "flac": (b"fLaC", 0),
-    "m4a":  (b"ftyp", 4),   # MP4/M4A box
+    "m4a":  (b"ftyp", 4),                # MP4/M4A box
+    "webm": (b"\x1a\x45\xdf\xa3", 0),    # EBML / Matroska (MediaRecorder output)
 }
 
 
@@ -76,18 +90,65 @@ class LoadedAudio:
     original_sample_rate: int = 16000   # source file sr before resample to 16k
 
 
+def _probe_duration_seconds(path: str,
+                              *, timeout: float = PROBE_TIMEOUT_S) -> float | None:
+    """Read the container-reported duration via ``ffprobe`` without decoding.
+
+    Returns the duration in seconds, or ``None`` if ffprobe is missing, hangs,
+    exits non-zero, or doesn't expose ``format=duration`` for this format.
+    Callers should treat ``None`` as "unknown — let pydub handle it" rather
+    than rejecting (some valid containers don't carry an authoritative
+    duration in their header).
+
+    The 5-second timeout protects against a malformed file that makes
+    ffprobe spin on parse.
+    """
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error",
+             "-show_entries", "format=duration",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=timeout, check=False,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError) as exc:
+        log.warning("ffprobe_probe_failed exc=%s", type(exc).__name__)
+        return None
+    if result.returncode != 0:
+        return None
+    out = result.stdout.strip()
+    if not out:
+        return None
+    try:
+        return float(out)
+    except ValueError:
+        return None
+
+
 def sniff_format(head: bytes) -> str:
-    """Return a lowercase format tag or raise AUDIO_UNSUPPORTED_FORMAT."""
+    """Return a lowercase format tag or raise AUDIO_UNSUPPORTED_FORMAT.
+
+    Detection layers (in order):
+
+    1. WAV: requires both "RIFF" at offset 0 AND "WAVE" at offset 8 — rules
+       out other RIFF containers (AVI, WebP, ANI, ...).
+    2. Raw MP3 frame sync: 0xFF 0xE0..FF.
+    3. WEBM: EBML magic AND ``DocType`` substring "webm" anywhere in the
+       first 64 bytes. Without the DocType check, arbitrary Matroska
+       (video/.mkv) would pass and feed ffmpeg unexpected payload.
+    4. Other formats by their stable magic prefix in ``_MAGIC``.
+    """
     if len(head) < 12:
         raise_vox(AUDIO_UNSUPPORTED_FORMAT, "File is too small to identify.")
 
-    # WAV needs the extra 'WAVE' word to rule out other RIFF containers.
     if head[:4] == b"RIFF" and head[8:12] == b"WAVE":
         return "wav"
-    # Plain MP3 without ID3 starts with an MPEG frame sync 0xFF 0xE0..FF.
     if head[0] == 0xFF and (head[1] & 0xE0) == 0xE0:
         return "mp3"
+    if head[:4] == b"\x1a\x45\xdf\xa3" and b"webm" in head[:64]:
+        return "webm"
     for fmt, (sig, offset) in _MAGIC.items():
+        if fmt == "webm":
+            continue          # already handled above with DocType check
         if head[offset:offset + len(sig)] == sig:
             return fmt
     raise_vox(AUDIO_UNSUPPORTED_FORMAT)
@@ -138,9 +199,29 @@ def decode(raw: bytes) -> LoadedAudio:
         ) as tmp:
             tmp.write(raw)
             tmp.flush()
+            # Defense in depth: probe the duration via ffprobe BEFORE pydub
+            # decodes. Small compressed payloads (Opus/AAC) can expand to >1 GB
+            # PCM in memory; AudioSegment only truncates after the full decode.
+            # ffprobe reads container metadata cheaply (<10 ms) and lets us
+            # reject obviously-too-long files before paying decode cost.
+            probed = _probe_duration_seconds(tmp.name)
+            if probed is not None and probed > MAX_DURATION_S * PROBE_TOLERANCE:
+                raise_vox(
+                    AUDIO_TOO_LONG,
+                    f"Audio header reports {probed:.1f}s; limit is "
+                    f"{MAX_DURATION_S:.0f}s. Re-record shorter and resubmit.",
+                )
             segment = AudioSegment.from_file(tmp.name, format=fmt)
     except Exception as exc:
-        log.warning("pydub decode failed: %s", exc)
+        # Let our own typed errors bubble untouched.
+        from ..errors import VoxError
+        if isinstance(exc, VoxError):
+            raise
+        # Log only the exception class + format tag — never the tmp path or
+        # ffmpeg argv (which may include user-controlled filenames). The
+        # raw bytes are gone (NamedTemporaryFile auto-deletes on raise),
+        # but stderr captured by pydub can leak file paths.
+        log.warning("pydub_decode_failed format=%s exc=%s", fmt, type(exc).__name__)
         raise_vox(AUDIO_CORRUPT)
 
     # Truncate silently per SPEC §7.1.

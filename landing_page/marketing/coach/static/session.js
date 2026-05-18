@@ -242,23 +242,11 @@
     }
   });
 
-  // -------- calibrate flow --------
-  els.calibrateRecordBtn.addEventListener("click", async () => {
-    hideBanner(els.calibrateError);
-    try {
-      window.CoachRecorder.startRecording({ timeoutMs: 12000 });
-      els.calibrateRecordBtn.classList.add("hide");
-      els.calibrateStopBtn.classList.remove("hide");
-      els.calibrateStatus.textContent = "Gravando… (máx. 12s)";
-    } catch (e) {
-      showBanner(els.calibrateError, "Falha ao gravar: " + e.message, "error");
-    }
-  });
-  els.calibrateStopBtn.addEventListener("click", async () => {
+  // -------- shared upload helpers --------
+  async function uploadCalibration(blob) {
     els.calibrateStopBtn.classList.add("hide");
     els.calibrateStatus.textContent = "Enviando calibração…";
     try {
-      const blob = await window.CoachRecorder.stopRecording();
       const fd = new FormData();
       fd.append("audio", blob, "calibrate.webm");
       const r = await fetch(
@@ -275,25 +263,12 @@
       showBanner(els.calibrateError, "Falha na calibração: " + e.message, "error");
       els.calibrateRecordBtn.classList.remove("hide");
     }
-  });
+  }
 
-  // -------- response flow --------
-  els.responseRecordBtn.addEventListener("click", () => {
-    hideBanner(els.responseError);
-    try {
-      window.CoachRecorder.startRecording({ timeoutMs: 30000 });
-      els.responseRecordBtn.classList.add("hide");
-      els.responseStopBtn.classList.remove("hide");
-      els.responseStatus.textContent = "Gravando resposta… (máx. 30s)";
-    } catch (e) {
-      showBanner(els.responseError, "Falha ao gravar: " + e.message, "error");
-    }
-  });
-  els.responseStopBtn.addEventListener("click", async () => {
+  async function uploadResponse(blob) {
     els.responseStopBtn.classList.add("hide");
     els.responseStatus.textContent = "Enviando resposta…";
     try {
-      const blob = await window.CoachRecorder.stopRecording();
       const fd = new FormData();
       fd.append("audio", blob, "response.webm");
       const qt = els.questionText.value.trim();
@@ -310,6 +285,70 @@
       els.responseRecordBtn.classList.remove("hide");
       els.questionText.value = "";
       pollState();
+    } catch (e) {
+      showBanner(els.responseError, "Falha na resposta: " + e.message, "error");
+      els.responseRecordBtn.classList.remove("hide");
+    }
+  }
+
+  // -------- calibrate flow (record + stop + auto-stop) --------
+  // Calibration target = 8s of speech (SPEC §3 step 7). Auto-stop at 20s gives
+  // generous buffer; uploadCalibration runs whether user clicks stop OR the
+  // auto-stop timer fires (race fix for the "Recorder is not active" bug).
+  els.calibrateRecordBtn.addEventListener("click", () => {
+    hideBanner(els.calibrateError);
+    try {
+      window.CoachRecorder.startRecording({
+        timeoutMs: 20000,
+        onAutoStop: (blob) => uploadCalibration(blob),
+        onError: (err) => showBanner(els.calibrateError,
+          "Erro no recorder: " + err.message, "error"),
+      });
+      els.calibrateRecordBtn.classList.add("hide");
+      els.calibrateStopBtn.classList.remove("hide");
+      els.calibrateStatus.textContent = "Gravando… (8s alvo, máx. 20s)";
+    } catch (e) {
+      showBanner(els.calibrateError, "Falha ao gravar: " + e.message, "error");
+    }
+  });
+  els.calibrateStopBtn.addEventListener("click", async () => {
+    if (!window.CoachRecorder.isActive()) {
+      // Auto-stop already fired; upload was triggered by callback.
+      return;
+    }
+    try {
+      const blob = await window.CoachRecorder.stopRecording();
+      uploadCalibration(blob);
+    } catch (e) {
+      showBanner(els.calibrateError, "Falha na calibração: " + e.message, "error");
+      els.calibrateRecordBtn.classList.remove("hide");
+    }
+  });
+
+  // -------- response flow (record + stop + auto-stop) --------
+  els.responseRecordBtn.addEventListener("click", () => {
+    hideBanner(els.responseError);
+    try {
+      window.CoachRecorder.startRecording({
+        timeoutMs: 45000,
+        onAutoStop: (blob) => uploadResponse(blob),
+        onError: (err) => showBanner(els.responseError,
+          "Erro no recorder: " + err.message, "error"),
+      });
+      els.responseRecordBtn.classList.add("hide");
+      els.responseStopBtn.classList.remove("hide");
+      els.responseStatus.textContent = "Gravando resposta… (máx. 45s)";
+    } catch (e) {
+      showBanner(els.responseError, "Falha ao gravar: " + e.message, "error");
+    }
+  });
+  els.responseStopBtn.addEventListener("click", async () => {
+    if (!window.CoachRecorder.isActive()) {
+      return;
+    }
+    try {
+      const blob = await window.CoachRecorder.stopRecording();
+      uploadResponse(blob);
     } catch (e) {
       showBanner(els.responseError, "Falha na resposta: " + e.message, "error");
       els.responseRecordBtn.classList.remove("hide");

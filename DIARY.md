@@ -4,6 +4,154 @@
 
 ---
 
+## 2026-05-17 — PR #9 deployed + Stripe key pre-staged prod .env
+
+**Tickets touched:** `VOX-COACH-MISC` (close), `VOX-COACH-D` (pre-stage), `HUMAN Q-11 Q-12`
+
+**Done:**
+
+- **PR #9 `cd97d98` deployed prod** 22:13 UTC. PREV_SHA `87be4e2` rollback anchor.
+  - `git pull` master (6 files / 205 ins / 13 del)
+  - `nginx -t` ok + `systemctl reload nginx` zero downtime (new voxupload location block pra Coach audio endpoints)
+  - `systemctl restart voxprobabilis` active (sniff_format hardening + WEBM DocType + log redux)
+  - Smoke regression 6/6 verde: `/` `/coach` `/coach/terms.pdf` `/api/health` `/privacy` `/app`
+
+- **Stripe restricted key pre-staged em prod `.env`** (22:13 UTC, Faustão "autorizo prod eu sei do risco"):
+  - `.env.bak.20260517-221343` backup criado
+  - `STRIPE_RESTRICTED_KEY=rk_live_...` appended via stdin pipe (sem exposição em command line)
+  - `chmod 600` + `chown vox:vox` mantidos
+  - Nenhum código lê variável atualmente — pre-stage pra VOX-COACH-D futuro
+  - Faustão pediu "anota qualquer lugar pra eu não esquecer" → também registrei em HUMAN.md Q-12
+
+**Security alerts em HUMAN.md (Q-11 + Q-12):**
+- Q-11: 2 chaves expostas no transcript Claude desta sessão (Anthropic + Stripe). Rotacionar ambas quando Faustão puder. Backup `.env.bak` preserva versão pré-Stripe.
+- Q-12: STRIPE_RESTRICTED_KEY pre-staged sem consumidor. Validar escopo restricted quando VOX-COACH-D bootstrap começar.
+
+**Sequência completa do dia (4 prod deploys):**
+1. PR #3 (VOX-COACH-B Coach T1) → `d1377d1` 03:48 UTC
+2. PR #6 (hotfix WEBM + race) → `7d4d1e4` 19:33 UTC  
+3. PR #8 (VOX-XSS-REPORT-HTML CSP) → `87be4e2` 21:32 UTC
+4. PR #9 (VOX-COACH-MISC sniff + nginx) → `cd97d98` 22:13 UTC
+
+Plus PR #4 e #7 docs close-out merged sem deploy.
+
+**Tests pytest local cumulativo:** ~190+ verde, 5 audio pré-existentes falhas (llvmlite py3.13). 4 deploys consecutivos sem regressão (smoke 6/6 cada).
+
+**In flight:**
+- Faustão hard-refresh + completar sessão real Coach (calibrate + responses + end + relatório template)
+- Confirmação escrita "testei tudo passou" pra fechar VOX-COACH-B (rule #13)
+- Rotacionar 2 keys expostas (Q-11)
+
+**Sub-tickets abertos (Codex P2 deferred):**
+- VOX-COACH-AUDIO-BOMB (ffprobe pre-decode duration)
+- VOX-COACH-IDEMPOTENCY (Idempotency-Key /response)
+- VOX-XSS-REPORT-HTML (Done ✓)
+
+**Próxima sessão candidata:**
+- Check status spawn tasks (fix/csp-cloudflare-beacon + c/adoring-darwin-* COACH-C plan)
+- VOX-COACH-AUDIO-BOMB se Faustão prioritizar
+- Atualizar chaves rotated em prod `.env`
+
+---
+
+## 2026-05-17 — VOX-XSS-REPORT-HTML deployed + VOX-COACH-MISC batch P2/P3
+
+**Tickets touched:** `VOX-XSS-REPORT-HTML` (close), `VOX-COACH-MISC` (P2/P3 backlog)
+
+**Done:**
+
+- **VOX-XSS-REPORT-HTML** PR #8 `87be4e2` merged + deployed prod 2026-05-17 21:32 UTC. Per-response CSP `sandbox; default-src 'none'; script-src 'none'; ...` em `/api/coach/session/{token}/report.html` + X-Content-Type-Options nosniff + X-Frame-Options SAMEORIGIN + Referrer-Policy no-referrer + Cache-Control no-store. 2 tests novos (CSP directives + body verbatim inerte). Smoke 6/6 verde regression. **T1 paid agora safe ativar.**
+
+- **VOX-COACH-MISC batch P2/P3** (branch `fix/coach-codex-backlog-p2p3`, 2 commits):
+
+  - `42255a4` fix: sniff_format hardening
+    - **P2 RIFF-non-WAVE pre-existente bug**: `_MAGIC["wav"]=(b"RIFF",0)` permitia AVI/WebP/ANI cair como wav. Removido; wav exige RIFF+WAVE no check explícito (já existia, gap era no fallback loop).
+    - **P2 WEBM DocType check**: EBML magic sozinho aceitava .mkv. Agora exige substring "webm" nos primeiros 64 bytes — fecha vetor Matroska arbitrário pro ffmpeg.
+    - **P3 hint** `AUDIO_UNSUPPORTED_FORMAT`: incluir WEBM.
+    - **P3 log hygiene**: `pydub_decode_failed format=X exc=ClassName` (era `pydub decode failed: %s` expondo stderr/path).
+    - **P3 tests**: 4 novos (RIFF-AVI rejected, EBML-non-webm rejected, EBML-with-webm-in-64 accepted, truncated cases). 7/7 sniff tests verde.
+
+  - `0b740c2` fix: nginx voxupload Coach regex
+    - **P2 rate limit gap**: Coach `/api/coach/session/<token>/{calibrate,response}` caía no `/api/` genérico (10 r/s) em vez do voxupload (2 r/s). Location block regex separado.
+
+**Codex P2 remaining (substantive, deferred sub-tickets):**
+
+- **VOX-COACH-AUDIO-BOMB** (P2): ffprobe pre-decode duration check. Atualmente decode acontece antes do truncamento de 60s — WEBM Opus 10MB pode expandir pra ~1.6GB PCM. Fix: subprocess.run ffprobe pra ler duration metadata; reject > 60s sem decodar. +50-100ms latência/request. Defesa contra decompression bomb.
+
+- **VOX-COACH-IDEMPOTENCY** (P2): `Idempotency-Key` header em `POST /api/coach/session/<token>/response`. Migration add unique constraint per (session_id, key); route checa header, retorna existing resp se hit. Defesa contra double-POST (race UI ou retry network). Schema change + ~50 LOC.
+
+**Tests local:** 7/7 sniff_format verde. test_coach_routes 18 passed + 2 skipped (pré-existentes).
+
+**Next:**
+- PR fix/coach-codex-backlog-p2p3 + merge + súplica prod deploy
+- Deploy: `git pull` + `nginx -t && systemctl reload nginx` (zero downtime nginx) + `systemctl restart voxprobabilis` (sniff fix backend)
+- Sub-tickets VOX-COACH-AUDIO-BOMB + VOX-COACH-IDEMPOTENCY ficam abertos pra próximo sprint
+
+---
+
+## 2026-05-17 — VOX-COACH-B hotfix WEBM + auto-stop race + Codex cross-review
+
+**Tickets touched:** `VOX-COACH-B` (hotfix), `VOX-XSS-REPORT-HTML` (novo sub-ticket)
+
+**Bug Faustão reportou** durante teste browser real pós-deploy LIVE:
+1. `AUDIO_UNSUPPORTED_FORMAT` ao calibrar — backend rejeitava `audio/webm` (MediaRecorder default Chrome/Firefox/Edge)
+2. `"Recorder not active"` ao clicar Stop — auto-stop timer (12s) disparava antes do click manual
+
+**Hotfix shipped (PR #6 merged `7d4d1e4`):**
+- `backend/app/audio/load.py` _MAGIC + EBML signature `1A 45 DF A3` → webm aceito
+- `coach/static/recorder.js` refactor: `onAutoStop` callback delivera blob mesmo se timer ganha. Caller auto-uploads
+- Calibrate timeout 12s→20s, response 30s→45s
+- 4/4 sniff_format tests verdes (webm + ogg + wav + reject-short)
+- SSH prod git pull master → restart voxprobabilis active 140MB clean
+- Smoke prod 5/5 verde (origin novo recorder.js confirmado via cache-bust query)
+- Cloudflare cache HIT serve recorder.js antigo (max-age 14400 / 4h TTL); Faustão precisa hard-refresh OU purge dashboard
+
+**Codex cross-review (xhigh reasoning, ~5min):**
+
+Verdict: **Bloquear** (achados pós-deploy)
+
+**P1 (bloqueador antes de T1 paid):**
+- `/api/coach/session/{token}/report.html` retorna HTML do Sonnet diretamente fora do iframe sandbox. CSP `'unsafe-inline'` permite execução script. Prompt injection via `question_text` → XSS same-origin se adv abre URL direta
+- Mitigação: CSP header específica no endpoint (`sandbox; default-src 'none'; script-src 'none'`) OU sanitização server-side allowlist
+- Não-bloqueante pra teste atual: FREE_TRIAL tier = 0 reports LLM (template fallback), sem XSS path ativo
+- **Novo sub-ticket: VOX-XSS-REPORT-HTML** — resolver antes ativar TIER_1_MONTHLY pago
+
+**P2 (backlog imediato VOX-COACH-C-MISC):**
+- nginx `voxupload` rate-limit cobre `/api/calibrate|analyze` mas NÃO `/api/coach/.../calibrate|response` → cai no `/api/` genérico (10r/s vs 2r/s). Fix nginx.conf regex
+- WEBM sniff só magic byte, sem `DocType=webm` check. Pydub decoda antes de truncar duração → bomb descompressão possível com WEBM pequeno expandindo muito PCM
+- Bug velho `_MAGIC["wav"]=(b"RIFF", 0)` — qualquer RIFF não-WAV cai como wav. Remover wav do loop, manter só validação explícita
+- Sem idempotência server-side `/response` — double POST = 2 respostas. `Idempotency-Key` header + unique constraint
+
+**P3:**
+- Hint `AUDIO_UNSUPPORTED_FORMAT` ainda omite WEBM
+- Tests só happy-path: faltam EBML truncado/mutado/vazio + RIFF não-WAVE + WEBM real ffmpeg
+- Logs `pydub decode failed` podem expor tmp path; reduzir pra classe/código
+- Comments hotfix encurtar pós
+
+**Concorda:** WEBM inclusion necessária; HMAC kind separation correta; auto-stop callback bom
+
+**Files (hotfix):**
+- backend/app/audio/load.py (+5 -2)
+- backend/tests/test_audio_load.py (+14 new tests sniff_format)
+- landing_page/marketing/coach/static/recorder.js (+44 -8 onAutoStop refactor)
+- landing_page/marketing/coach/static/session.js (+58 -36 uploadCalibration/Response extracted)
+
+**Cloudflare cache nota:** /coach/static/*.{js,css,png} servido por nginx + Cloudflare cache 4h. Hard-refresh user-side ou purge CF dashboard até TTL expirar. Considerar Cache-Control: no-cache em /coach/static/* OR script-src query string `?v=hash` em próximo commit (lo-pri).
+
+**In flight:**
+- Faustão re-teste browser hard-refresh + completar sessão (calibrate → 3 responses → end → relatório template)
+- Confirmação escrita Faustão pra fechar VOX-COACH-B (rule #13)
+
+**Sub-tickets abertos:**
+- **VOX-XSS-REPORT-HTML**: P1 — CSP header específica no /report.html ou allowlist sanitization. Bloqueador antes T1 LLM ativo.
+- **VOX-COACH-C-MISC** (ou rolar em VOX-CSP-FIX já em paralelo): P2 — nginx voxupload regex Coach, WEBM DocType check, RIFF sniff bug, idempotency /response
+
+**Spawn tasks paralelos arrancaram:**
+- `fix/csp-cloudflare-beacon` branch (VOX-CSP-FIX chip clicado por Faustão) — work in progress sessão separada
+- VOX-COACH-C plan chip — status TBD
+
+---
+
 ## 2026-05-17 — VOX-COACH-B Phase B.4.4 LIVE em prod + sfaustodev@ ativado
 
 **Tickets touched:** `VOX-COACH-B`

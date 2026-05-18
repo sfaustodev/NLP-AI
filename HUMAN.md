@@ -8,7 +8,32 @@
 
 ## Open questions
 
-> Todas resolvidas 2026-05-16 com inicio VOX-COACH-B. Fila vazia.
+### Q-11 · Rotacionar 2 API keys expostas no transcript Claude · raised 2026-05-17 · context: VOX-COACH-B + VOX-COACH-D
+
+**Why I'm flagging:** 2 chaves vivas foram coladas no chat desta sessão. Transcripts são salvos pelo Claude Code logs + qualquer backup. Consideradas comprometidas. Risco: alguém com acesso ao histórico pode movimentar dinheiro / ler conta Anthropic.
+
+**Chaves a rotacionar:**
+1. **Anthropic API key** — usada por Coach Sonnet reports (VOX-COACH-B prod ativo desde 2026-05-17 03:48 UTC). Console: console.anthropic.com → Settings → API Keys → revoke a atual + create new → SSH prod + atualizar `VOX_COACH_SONNET_API_KEY` em `/opt/voxprobabilis/.env` + `systemctl restart voxprobabilis`.
+2. **Stripe restricted key (rk_live)** — pre-staged em prod `.env` como `STRIPE_RESTRICTED_KEY` em 2026-05-17 22:13 UTC para VOX-COACH-D futuro. Nenhum código usa ainda. Console: dashboard.stripe.com → Developers → API keys → essa restricted key → "Roll key" → save new value local + SSH prod atualizar `.env` (não precisa restart, ninguém lê ainda).
+
+**Tentative:** Faustão rotaciona no console quando puder; eu atualizo prod `.env` com nova quando ele passar. Ambas backed up em `.env.bak.20260517-221343` antes da escrita.
+
+**Ask:** quando tu rotacionar, me passa as novas + autorização prod, eu atualizo `.env` + restart se precisar.
+
+---
+
+### Q-12 · STRIPE_RESTRICTED_KEY pre-staged em prod sem código consumir · raised 2026-05-17 · context: VOX-COACH-D
+
+**Why I'm noting:** Chave Stripe foi salva em prod `.env` como `STRIPE_RESTRICTED_KEY` (mode 0600, vox:vox) em 2026-05-17 22:13 UTC. Faustão autorizou pre-stage "pra não esquecer". Atualmente nenhuma linha de código lê essa variável — só vai ser usada quando VOX-COACH-D (Stripe checkout) for implementado.
+
+**Riscos:**
+- Blast radius +1: se prod for comprometido, atacante encontra Stripe key sem precisar fazer nada.
+- Key é `restricted` (escopo limitado, não secret_key full access), reduz blast.
+- Sem código que use → não há vetor automatizado pra movimento de dinheiro até VOX-COACH-D mergear.
+
+**Tentative:** quando VOX-COACH-D bootstrap começar, validar que escopo da `restricted` cobre exatamente as actions necessárias (charges, customers, subscriptions). Se faltar permissão, pedir nova key escopada antes de ir live.
+
+**Ask:** confirmação ou nada — só registrando que ela está lá.
 
 ---
 
