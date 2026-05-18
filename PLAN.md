@@ -13,8 +13,9 @@
 **Escopo:**
 - Edit `backend/deploy/nginx.conf` linha 96 CSP header.
 - Add `https://static.cloudflareinsights.com` ao `script-src` (carrega beacon.min.js).
-- Add `https://cloudflareinsights.com` ao `connect-src` (beacon POST métricas em `/cdn-cgi/rum`).
 - Defensive: add `media-src 'self' blob:` pra futuro preview de gravação Coach (recorder.js usa MediaRecorder; hoje só FormData upload, mas blob playback é cenário plausível v0.2).
+- Hardening grátis (Codex P2): add `object-src 'none'; base-uri 'self'` (base-uri não herda de default-src; sem isso `<base>` injetado reescreve URLs relativos).
+- Codex P2 #1 revisto: `connect-src cloudflareinsights.com` NÃO é necessário em proxied (orange-cloud) mode — beacon POSTa same-origin `/cdn-cgi/rum`. Removido da CSP. Só seria preciso em setup non-proxied.
 
 **Arquivos críticos:**
 - `backend/deploy/nginx.conf` (single-line edit linha 96)
